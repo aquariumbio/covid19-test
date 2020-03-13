@@ -1,3 +1,3 @@
 # About this workflow
 
-Please describe how to use your workflow here.
+Source: https://www.cdc.gov/coronavirus/2019-ncov/lab/rt-pcr-detection-instructions.html
