@@ -7,7 +7,10 @@ Documentation here. Start with a paragraph, not a heading or title, as in most v
 - **Specimen** [S]  
   - <a href='#' onclick='easy_select("Sample Types", "Respiratory Specimen")'>Respiratory Specimen</a> / <a href='#' onclick='easy_select("Containers", "Nasopharyngeal Swab")'>Nasopharyngeal Swab</a>
 
+### Parameters
 
+- **Method** [QIAamp DSP Viral RNA Mini Kit,Alternative Method]
+- **Options** 
 
 ### Outputs
 
