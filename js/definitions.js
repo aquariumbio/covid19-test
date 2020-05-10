@@ -31,8 +31,8 @@ var config = {
             },
           
             {
-              name: 'Aliquot Primer Sets',
-              path: 'operation_types/Aliquot_Primer_Sets' + '.md',
+              name: 'Aliquot Primer/Probe',
+              path: 'operation_types/Aliquot_Primer_Probe' + '.md',
               type: "local-md"
             },
           
@@ -43,14 +43,14 @@ var config = {
             },
           
             {
-              name: 'Run qPCR',
-              path: 'operation_types/Run_qPCR' + '.md',
+              name: 'Prepare RT-qPCR Plate',
+              path: 'operation_types/Prepare_RT-qPCR_Plate' + '.md',
               type: "local-md"
             },
           
             {
-              name: 'Set Up qPCR',
-              path: 'operation_types/Set_Up_qPCR' + '.md',
+              name: 'Run qPCR',
+              path: 'operation_types/Run_qPCR' + '.md',
               type: "local-md"
             },
           
