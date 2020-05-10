@@ -10,6 +10,7 @@ Source: https://www.cdc.gov/coronavirus/2019-ncov/lab/rt-pcr-detection-instructi
 
 ### Authors
   - Devin Strickland, University of Washington
+  - Rita Chen, Boston University
 
 ### Acknowledgements
 
