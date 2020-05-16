@@ -1,4 +1,4 @@
-# Aquarium COVID-19 Detection, version 0.0.1
+# Aquarium COVID-19 Detection, version 0.0.2
 
 Source: https://www.cdc.gov/coronavirus/2019-ncov/lab/rt-pcr-detection-instructions.html [[Download](aq-covid19-test.aq)] [[Github Repo](https://github.com/klavinslab/aq-covid19-test)]
 
@@ -11,6 +11,7 @@ Source: https://www.cdc.gov/coronavirus/2019-ncov/lab/rt-pcr-detection-instructi
 ### Authors
   - Devin Strickland, University of Washington
   - Rita Chen, Boston University
+  - Dany Fu, Boston University
 
 ### Acknowledgements
 
