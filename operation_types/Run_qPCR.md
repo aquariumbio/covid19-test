@@ -56,7 +56,8 @@ class Protocol
   def default_job_params
     {
       thermocycler_model: TestThermocycler::MODEL,
-      program_name: 'CDC_TaqPath_CG'
+      program_name: 'CDC_TaqPath_CG',
+      qpcr: true
     }
   end
 
@@ -96,13 +97,14 @@ class Protocol
     set_up_program(
       thermocycler: thermocycler,
       program: program,
-      composition: composition
+      composition: composition,
+      qpcr: @job_params[:qpcr]
     )
 
     load_plate_and_start_run(
       thermocycler: thermocycler,
       items: operations.map { |op| op.input(INPUT_REACTIONS).item },
-      filename: experiment_filename
+      experiment_filename: experiment_filename
     )
 
     export_measurements(thermocycler: thermocycler)
