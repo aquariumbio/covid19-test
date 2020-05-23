@@ -1,0 +1,24 @@
+{
+  "id": 6,
+  "name": "Prepare RT-qPCR Plate",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Template",
+      "part": false,
+      "array": true,
+      "routing": "T"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "qPCR Reactions",
+      "part": false,
+      "array": false,
+      "routing": ""
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}
