@@ -2,7 +2,7 @@ var config = {
 
   tagline: "The Laboratory</br>Operating System",
   documentation_url: "http://localhost:4000/aquarium",
-  title: "Aquarium COVID-19 Detection",
+  title: "Aquarium SARS-CoV-2 detection",
   navigation: [
 
     {
