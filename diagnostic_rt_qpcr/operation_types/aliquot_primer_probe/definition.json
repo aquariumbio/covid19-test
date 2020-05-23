@@ -1,0 +1,24 @@
+{
+  "id": 3,
+  "name": "Aliquot Primer/Probe",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Primer Set",
+      "part": false,
+      "array": false,
+      "routing": "P"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Primer Set",
+      "part": false,
+      "array": false,
+      "routing": "P"
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}
