@@ -1,6 +1,6 @@
-# Aquarium COVID-19 Detection, version 0.0.2
+# Aquarium SARS-CoV-2 detection, version 0.0.2
 
-Source: https://www.cdc.gov/coronavirus/2019-ncov/lab/rt-pcr-detection-instructions.html [[Download](aq-covid19-test.aq)] [[Github Repo](https://github.com/klavinslab/aq-covid19-test)]
+Aquarium protocols for molecular diagnostics of SARS-CoV-2 using PCR and RT-qPCR [[Download](aq-covid19-test.aq)] [[Github Repo](https://github.com/klavinslab/aq-covid19-test)]
 
 &copy; University of Washington
 
@@ -14,6 +14,12 @@ Source: https://www.cdc.gov/coronavirus/2019-ncov/lab/rt-pcr-detection-instructi
   - Dany Fu, Boston University
 
 ### Acknowledgements
+  - Justin Vrana, University of Washington
+  - Nuttada Panpradist, University of Washington
+  - Ben Keller, University of Washington
+  - Barry Lutz, University of Washington
+  - Rob Moseley, Duke University
+  - Steve Haase, Duke University
 
 ### Details
 This workflow and these documents were automatically generated from
