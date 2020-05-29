@@ -1,0 +1,1 @@
+This operation performs the RNA extraction and prepared RT-qPCR plate in a single step.

@@ -1,0 +1,36 @@
+{
+  "id": 17,
+  "name": "Extract RNA and Prepare RT-qPCR Plate",
+  "parent_class": "OperationType",
+  "category": "Modified CDC Protocol",
+  "inputs": [
+    {
+      "name": "Specimen",
+      "part": false,
+      "array": false,
+      "routing": "S"
+    },
+    {
+      "name": "Method",
+      "part": false,
+      "array": false,
+      "routing": null
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "qPCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "T"
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

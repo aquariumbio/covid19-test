@@ -1,0 +1,24 @@
+{
+  "id": 47,
+  "name": "Positive Template Serial Dilution",
+  "parent_class": "OperationType",
+  "category": "Modified CDC Protocol",
+  "inputs": [
+    {
+      "name": "Primer Set",
+      "part": null,
+      "array": null,
+      "routing": "P"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Primer Mix Serial Dilution",
+      "part": null,
+      "array": null,
+      "routing": "P"
+    }
+  ],
+  "on_the_fly": null,
+  "user_id": 1
+}
