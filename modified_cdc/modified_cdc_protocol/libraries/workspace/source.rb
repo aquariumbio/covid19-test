@@ -1,4 +1,7 @@
-# Library code here
+# Library for handling the cleaning and preparing of workspaces.
+#
+# @author Justin Vrana <jvrana@uw.edu>
+
 
 class Workspace
     
@@ -46,5 +49,13 @@ class Workspace
             note "Clean the space with bleach and ethanol in case there is any spilling"
             note "Change gloves (now your gloves may be contaminated with some samples)"
         end
+    end
+end
+
+class WorkspaceLocation
+    attr_reader :name
+    
+    def initialize(args)
+        @name = args[:name] 
     end
 end

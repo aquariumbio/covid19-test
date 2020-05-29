@@ -7,6 +7,7 @@ class Protocol
   def main
 
     workspace = Workspace.new(protocol: self)
+    hood = WorkspaceLocation.new(name: "PCR Chamber")
     workspace.prepare()
     
     ####################################################
@@ -22,15 +23,17 @@ class Protocol
     For run #2, the same will start with S045D and end with S090D with 2 positive and 2 negative controls
     """
     
-    workspace.move(to: "PCR Chamber")
+    # move the technician to the "PCR Chamber"
+    workspace.move(to: hood.name)
 
+    # add the swab elution buffer to the prepared 96-well plate
     add_swab_elution_buffer(operations)
 
+    # TODO: This should simply call `workspace.clean()` and the object should
+    #   automatically know that the hood will need to be cleaned with bleach, etc.
     workspace.clean_hood()
 
     lysis(operations)
-
-    # basically repeat above for the next set
 
     show do
       note "Change gloves"
@@ -102,7 +105,10 @@ class Protocol
             note "Use multichannel pipette to transfer S001D - S008D to N2 001 - N2 008. Close the cap of N2 001 - N2 008"
             note "Use multichannel pipette to transfer S001D - S008D to N2 001 - N2 008. Close the cap of RP 001 - RP 008"
             note "Close S001D and S008D with the new cap"
-        end    
+        end
+        
+        
+        # basically repeat above for the next set
     end
     
 end
