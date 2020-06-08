@@ -1,0 +1,10 @@
+{
+  "id": 48,
+  "name": "Prepare RT-qPCR Plate",
+  "parent_class": "OperationType",
+  "category": "Modified CDC Protocol",
+  "inputs": [],
+  "outputs": [],
+  "on_the_fly": null,
+  "user_id": 1
+}
