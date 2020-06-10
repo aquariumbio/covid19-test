@@ -9,14 +9,20 @@
       "part": false,
       "array": true,
       "routing": "T"
+    },
+    {
+      "name": "Options",
+      "part": null,
+      "array": null,
+      "routing": null
     }
   ],
   "outputs": [
     {
-      "name": "qPCR Reactions",
+      "name": "PCR Plate",
       "part": false,
       "array": false,
-      "routing": ""
+      "routing": "P"
     }
   ],
   "on_the_fly": false,
