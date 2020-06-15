@@ -10,7 +10,7 @@ needs 'Standard Libs/LabwareNames'
 # cycles should be avoided. Maintain on ice when thawed.
 # 2) Resuspend dried reagent in each tube in 1 mL of nuclease-free water to
 # achieve the proper concentration. Make single use aliquots (approximately 30
-# µL) and store at less than and equal to -70C.
+# uL) and store at less than and equal to -70C.
 # 3) Thaw a single aliquot of diluted positive control for each experiment and
 # hold on ice until adding to plate. Discard any unused portion of the aliquot.
 class Protocol
@@ -28,7 +28,7 @@ class Protocol
 
     # 2. For each Lyophilized Postive Control, resuspend in 1 mL of
     # nuclease-free waterand, aliquot 33 use aliquots (approximately
-    # 30 µL) and store at less than and equal to -70C.
+    # 30 uL) and store at less than and equal to -70C.
     save_output(ops: operations)
 
     suspend_lyophilized_RNA

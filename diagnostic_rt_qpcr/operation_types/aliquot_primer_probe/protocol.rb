@@ -10,7 +10,7 @@ needs 'Standard Libs/LabwareNames'
 # 3) Using aseptic technique, suspend dried reagents in 1.5 mL of nuclease-free
 # water (50X working concentration) and allow to rehydrate for 15 min at room
 # temperature in the dark.
-# 4) Mix gently and aliquot primers/probe in 300 µL volumes into 5 pre-labeled
+# 4) Mix gently and aliquot primers/probe in 300 uL volumes into 5 pre-labeled
 # tubes. Store a single aliquot of primers/probe at 2-8oC in the dark. Do not
 # refreeze (stable for up to 4 months). Store remaining aliquots at <= -20oC
 # in a non-frost-free freezer.
