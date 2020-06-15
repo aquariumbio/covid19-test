@@ -2,7 +2,7 @@
 # Written By Rita Chen 2020-05-04
 # Updated by Dany Fu 2020-06-01
 
-needs 'Standard Libs/LabwareNames'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
 # 2019-nCoV Positive Control (nCoVPC) Preparation:
 # 1) Precautions: This reagent should be handled with caution in a dedicated
@@ -14,8 +14,7 @@ needs 'Standard Libs/LabwareNames'
 # 3) Thaw a single aliquot of diluted positive control for each experiment and
 # hold on ice until adding to plate. Discard any unused portion of the aliquot.
 class Protocol
-  include Units
-  include LabwareNames
+  include DiagnosticRTqPCRHelper
 
   VOL_WATER = { qty: 1, units: MILLILITERS }.freeze
   VOL_SUSPENSION = { qty: 30, units: MICROLITERS }.freeze
@@ -35,7 +34,7 @@ class Protocol
     keep_tubes = [] # Empty array for storing single use aliquots
 
     # Group the operations by the input reagent
-    ops_by_input = operations.group_by { |op| op.input('Template').item }
+    ops_by_input = operations.group_by { |op| op.input(TEMPLATE).item }
     ops_by_input.each do |lyophilized_rna, ops|
       keep_tubes.push(make_aliquots(ops: ops, lyophilized_rna: lyophilized_rna))
     end
@@ -66,9 +65,9 @@ class Protocol
 
     # Declare references to output objects
     ops.each do |op|
-      op.output('Template').item.associate :volume, VOL_SUSPENSION[:qty]
+      op.output(TEMPLATE).item.associate :volume, VOL_SUSPENSION[:qty]
 
-      output_RNA = op.output('Template').sample
+      output_RNA = op.output(TEMPLATE).sample
       # makes 32 additional aliquots per op
       (OUTPUT_ITEMS_NUM[:qty] - 1).times do
         new_aliquot = output_RNA.make_item('Purified RNA in 1.5 mL tube')
@@ -85,13 +84,13 @@ class Protocol
   # @param item [Item] the item that is created
   def link_output_item(operation:, sample:, item:)
     fv = FieldValue.new(
-      name: 'Template',
+      name: TEMPLATE,
       child_item_id: item.id,
       child_sample_id: sample.id,
       role: 'output',
       parent_class: 'Operation',
       parent_id: operation.id,
-      field_type_id: operation.output('Template').field_type.id
+      field_type_id: operation.output(TEMPLATE).field_type.id
     )
     fv.save
   end

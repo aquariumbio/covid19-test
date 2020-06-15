@@ -1,7 +1,7 @@
 # Aliquot Primer Probe
 # Written By Dany Fu 2020-05-05
 
-needs 'Standard Libs/LabwareNames'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
 # 1) Upon receipt, store dried primers and probes at 2-8C.
 # 2) Precautions: These reagents should only be handled in a clean area and
@@ -15,8 +15,7 @@ needs 'Standard Libs/LabwareNames'
 # refreeze (stable for up to 4 months). Store remaining aliquots at <= -20oC
 # in a non-frost-free freezer.
 class Protocol
-  include Units
-  include LabwareNames
+  include DiagnosticRTqPCRHelper
 
   OUTPUT_ITEMS_NUM = { qty: 5, units: TUBE_MICROFUGE }.freeze
   TIME_REHYDRATE = { qty: 15, units: MINUTES }.freeze
@@ -37,7 +36,7 @@ class Protocol
     suspend_primer_mix
 
     # Group the operations by the input reagent
-    ops_by_input = operations.group_by { |op| op.input('Primer Set').item }
+    ops_by_input = operations.group_by { |op| op.input(PRIMER_MIX).item }
     ops_by_input.each do |primer, ops|
       make_aliquots(ops: ops, primer: primer)
     end
@@ -60,9 +59,9 @@ class Protocol
     operations.make
 
     operations.each do |op|
-      op.output('Primer Set').item.associate :volume, VOL_SUSPENSION[:qty]
+      op.output(PRIMER_MIX).item.associate :volume, VOL_SUSPENSION[:qty]
 
-      output_primer = op.output('Primer Set').sample
+      output_primer = op.output(PRIMER_MIX).sample
       # makes 4 additional aliquots per op
       (OUTPUT_ITEMS_NUM[:qty] - 1).times do
         new_aliquot = output_primer.make_item('Primer Mix Aliquot')
@@ -78,13 +77,13 @@ class Protocol
   # @param item [Item] the item that is created
   def link_output_item(operation:, sample:, item:)
     fv = FieldValue.new(
-      name: 'Primer Set',
+      name: PRIMER_MIX,
       child_item_id: item.id,
       child_sample_id: sample.id,
       role: 'output',
       parent_class: 'Operation',
       parent_id: operation.id,
-      field_type_id: operation.output('Primer Set').field_type.id
+      field_type_id: operation.output(PRIMER_MIX).field_type.id
     )
     fv.save
   end
