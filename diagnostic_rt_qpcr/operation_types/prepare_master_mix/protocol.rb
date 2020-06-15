@@ -54,16 +54,6 @@ needs 'PCR Libs/PCRComposition'
 # 11) Dispense 15 uL of each master mix into the appropriate wells going
 #   across the row
 #
-# 12) Prior to moving to the nucleic acid handling area, prepare the
-#   No Template Control (NTC) eactions for column #1 in the
-#   assay preparation area.
-#
-# 13) Pipette 5 uL of nuclease-free water into the NTC sample wells
-#   (Figure 2, column 1). Securely cap NTC wells before proceeding.
-#
-# 14) Cover the entire reaction plate and move the reaction plate to
-#   the specimen nucleic acid handling area.
-#
 # @author Devin Strickland <strcklnd@uw.edu>
 class Protocol
   # Standard Libs
@@ -133,8 +123,6 @@ class Protocol
 
     prepare_master_mixes(operations: operations)
 
-    add_no_template_controls(operations: operations)
-
     operations.store
 
     {}
@@ -195,29 +183,6 @@ class Protocol
 
   def sample_number_with_excess(sample_number:)
     sample_number < 15 ? sample_number + 1 : sample_number + 2
-  end
-
-  def add_no_template_controls(operations:)
-    operations.each do |op|
-      layout_generator = PlateLayoutGeneratorFactory.build(
-        group_size: op.input_array(PRIMER_MIX).length,
-        method: :cdc_sample_layout
-      )
-      layout_group = layout_generator.next_group
-      composition = PCRCompositionFactory.build(
-        program_name: op.temporary[:options][:program_name]
-      )
-      volume = composition.water.qty_display
-      collection = op.output(PLATE).collection
-
-      show do
-        title "Pipet No Template Control (NTC) samples into plate #{collection}"
-
-        note "Pipet #{volume} of #{WATER} into the indicated wells of" \
-          " plate #{collection}"
-        table highlight_collection_rc(collection, layout_group, check: true)
-      end
-    end
   end
 
   ########## SHOW METHODS ##########
