@@ -1,0 +1,7 @@
+{
+  "id": 47,
+  "name": "PrepareRT_qPCRDefaults",
+  "parent_class": "Library",
+  "category": "Diagnostic RT-qPCR",
+  "user_id": 1
+}

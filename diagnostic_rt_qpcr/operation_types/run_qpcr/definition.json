@@ -1,5 +1,5 @@
 {
-  "id": 5,
+  "id": 14,
   "name": "Run qPCR",
   "parent_class": "OperationType",
   "category": "Diagnostic RT-qPCR",
@@ -7,21 +7,21 @@
     {
       "name": "qPCR Reactions",
       "part": false,
-      "array": false,
+      "array": true,
       "routing": "P"
     },
     {
       "name": "Options",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": null
     }
   ],
   "outputs": [
     {
       "name": "qPCR Reactions",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": true,
       "routing": "P"
     }
   ],
