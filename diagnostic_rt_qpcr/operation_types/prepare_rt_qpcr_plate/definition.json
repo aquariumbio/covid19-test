@@ -11,6 +11,7 @@
       "routing": "T"
     },
     {
+<<<<<<< HEAD
       "name": "options",
       "part": null,
       "array": null,
@@ -21,13 +22,25 @@
       "part": null,
       "array": null,
       "routing": "P"
+=======
+      "name": "Options",
+      "part": null,
+      "array": null,
+      "routing": null
+>>>>>>> acebcb2a7fde0faeb419bab2b6150b42b54ec1ea
     }
   ],
   "outputs": [
     {
+<<<<<<< HEAD
       "name": "Output PCR Plate",
       "part": null,
       "array": null,
+=======
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+>>>>>>> acebcb2a7fde0faeb419bab2b6150b42b54ec1ea
       "routing": "P"
     }
   ],
