@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module PrepareRT_qPCRValidation
+module PrepareRTqPCRValidation
 
   # Validates that all operations are as expected
   #
@@ -17,13 +17,13 @@ module PrepareRT_qPCRValidation
       unless valid_input
         all_errors.push(op)
         input_errors.push({op: op, error: input_error})
-        op.error(:IncompatibleInputsError, input_error.message)
+        op.error(:IncompatibleInputsError, input_error)
       end
 
       unless valid_contents
         all_errors.push(op)
         content_errors.push({op: op, error: content_error})
-        op.error(:InvalidContentsError, content_error.message)
+        op.error(:InvalidContentsError, content_error)
       end
     end
 
@@ -34,20 +34,10 @@ module PrepareRT_qPCRValidation
   end
 
   def display_error(error_list)
-    error_type = error_list.first[:error].class
-
-    size = (error_type.length + 1) * 2
-    slots = 1...size
-    tab = slots.each_slice(2).map do |row|
-      row.map do
-        {class: 'td-empty-slot'}
-      end
-    end
-    tab[0 , 0] = '<b>Operation</b>'
-    tab[0 , 1] = '<b>Error Message</b>'
-    error_type.each_with_index do |error_hash, idx|
-      tab[idx + 1, 0] = error_hash[:op].id.to_s
-      tab[idx + 1, 1] = error_hash[:error].message
+    error_type = error_list.first[:error]
+    tab = [['<b>Operation<b>', '<b>Error Message</b>']]
+    error_list.each do |err|
+      tab.push([err[:op].id, err[:error]])
     end
 
     show do
@@ -62,6 +52,7 @@ module PrepareRT_qPCRValidation
   end
 
   def validate_inputs(op)
+    #[failed/passed, message]
     [true, nil]
   end
 
