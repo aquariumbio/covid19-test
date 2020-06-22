@@ -13,7 +13,7 @@ needs 'Collection Management/CollectionDisplay'
 # needs 'Collection Management/CollectionData'
 needs 'Microtiter Plates/PlateLayoutGenerator'
 
-# Module for switching among several different RNA extraction kits
+# Module for elements that are common throughout Diagnostic RT qPCR
 #
 # @author Devin Strickland <strcklnd@uw.edu>
 module DiagnosticRTqPCRHelper
@@ -36,5 +36,4 @@ module DiagnosticRTqPCRHelper
   RNA_FREE_WORKSPACE = 'reagent set-up room'
   PLATE = 'PCR Plate'
   PRIMER_MIX = 'Primer/Probe Mix'
-
 end
