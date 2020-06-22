@@ -1,8 +1,8 @@
 {
-  "id": 15,
+  "id": 13,
   "name": "Prepare RT-qPCR Plate",
   "parent_class": "OperationType",
-  "category": "Diagnostic RT-qPCR",
+  "category": "Modified CDC Protocol",
   "inputs": [
     {
       "name": "Template",
@@ -11,7 +11,7 @@
       "routing": "T"
     },
     {
-      "name": "options",
+      "name": "Primer Set",
       "part": null,
       "array": null,
       "routing": null
@@ -21,6 +21,12 @@
       "part": null,
       "array": null,
       "routing": "P"
+    },
+    {
+      "name": "options",
+      "part": null,
+      "array": null,
+      "routing": null
     }
   ],
   "outputs": [
