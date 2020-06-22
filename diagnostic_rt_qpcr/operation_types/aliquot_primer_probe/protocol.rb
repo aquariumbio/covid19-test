@@ -22,13 +22,44 @@ class Protocol
   VOL_WATER = { qty: 1.5, units: MILLILITERS }.freeze
   VOL_SUSPENSION = { qty: 300, units: MICROLITERS }.freeze
 
+  COLD_ROOM = 'M4'.freeze
+
+  ########## DEFAULT PARAMS ##########
+
+  # Default parameters that are applied equally to all operations.
+  #   Can be overridden by:
+  #   * Associating a JSON-formatted list of key, value pairs to the `Plan`.
+  #   * Adding a JSON-formatted list of key, value pairs to an `Operation`
+  #     input of type JSON and named `Options`.
+  #
   def default_job_params
-    {
-      cold_room: 'M4' # location wizard of cold room at DAMPLab
-    }
+    {}
   end
 
+  # Default parameters that are applied to individual operations.
+  #   Can be overridden by:
+  #   * Adding a JSON-formatted list of key, value pairs to an `Operation`
+  #     input of type JSON and named `Options`.
+  #
+  def default_operation_params
+    {}
+  end
+
+  ########## MAIN ##########
+
   def main
+    @job_params = update_all_params(
+      operations: operations,
+      default_job_params: default_job_params,
+      default_operation_params: default_operation_params
+    )
+    return {} if operations.errored.any?
+
+    update_operation_params(
+      operations: operations,
+      default_operation_params: default_operation_params
+    )
+
     get_tubes(count: operations.length)
     operations.retrieve
 
@@ -130,7 +161,7 @@ class Protocol
     # can only be associated with one location.
     # Leaving this here for completeness.
     last_tube = Item.find(last_tube_id)
-    last_tube.move(default_job_params[:cold_room])
+    last_tube.move(COLD_ROOM)
     last_tube.store
   end
 end
