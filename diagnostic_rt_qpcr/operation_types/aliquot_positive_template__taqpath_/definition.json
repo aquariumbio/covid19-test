@@ -1,0 +1,24 @@
+{
+  "id": 17,
+  "name": "Aliquot Positive Template (TaqPath)",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Template",
+      "part": null,
+      "array": null,
+      "routing": "T"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Template",
+      "part": null,
+      "array": null,
+      "routing": "T"
+    }
+  ],
+  "on_the_fly": null,
+  "user_id": 1
+}

@@ -1,0 +1,24 @@
+{
+  "id": 18,
+  "name": "Aliquot Primer/Probe (TaqPath)",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Primer Set",
+      "part": null,
+      "array": null,
+      "routing": "P"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Primer Set",
+      "part": null,
+      "array": null,
+      "routing": "P"
+    }
+  ],
+  "on_the_fly": null,
+  "user_id": 1
+}
