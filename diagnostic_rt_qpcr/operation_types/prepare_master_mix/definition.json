@@ -1,30 +1,30 @@
 {
-  "id": 26,
+  "id": 19,
   "name": "Prepare Master Mix",
   "parent_class": "OperationType",
   "category": "Diagnostic RT-qPCR",
   "inputs": [
     {
       "name": "Primer/Probe Mix",
-      "part": null,
+      "part": false,
       "array": true,
       "routing": "M"
     },
     {
       "name": "Options",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": null
     }
   ],
   "outputs": [
     {
       "name": "PCR Plate",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": "P"
     }
   ],
-  "on_the_fly": null,
+  "on_the_fly": false,
   "user_id": 1
 }
