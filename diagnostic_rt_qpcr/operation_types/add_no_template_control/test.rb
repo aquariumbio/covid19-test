@@ -2,7 +2,7 @@
 
 class ProtocolTest < ProtocolTestBase
   def setup
-    add_random_operations(1)
+    ops = add_random_operations(1)
   end
 
   def analyze
