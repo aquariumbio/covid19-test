@@ -96,6 +96,10 @@ class Protocol
     {}
   end
 
+  # Add the no template controls to an Operation's putput collection
+  #
+  # @param operation [Operation]
+  # @return [void]
   def add_no_template_controls(operation:)
     # Group_Size and Program name are attributes of the plate
     # and should be associated to the plate from Prepare Master Mix
@@ -126,6 +130,13 @@ class Protocol
     inspect_data_associations(collection: collection) if debug
   end
 
+  # Add metadata for a group of no template control samples, and return the
+  #   locations of the group
+  #
+  # @param collection [Collection]
+  # @param group_size [Fixnum]
+  # @param method [String]
+  # @return [Array<Array<Fixnum>>]
   def add_ntc_data(collection:, group_size:, method:)
     microtiter_plate = MicrotiterPlateFactory.build(
       collection: collection,
@@ -140,6 +151,12 @@ class Protocol
     )
   end
 
+  # Instruct technician to add the no template control samples to the plate
+  #
+  # @param collection [Collection]
+  # @param volume [Fixnum]
+  # @param layout_group [Array<Array<Fixnum>>]
+  # @return [void]
   def show_add_ntc(collection:, volume:, layout_group:)
     show do
       title "Pipet No Template Control (NTC) samples into plate #{collection}"
@@ -154,6 +171,8 @@ class Protocol
 
   # Populate all input plates with qPCR Reactions
   #
+  # @param operations [OperationList]
+  # @return [void]
   def setup_test_plates(operations:)
     operations.each do |op|
       setup_test_plate(collection: op.input(PLATE).collection)
@@ -162,6 +181,8 @@ class Protocol
 
   # Populate a collection with qPCR Reactions
   #
+  # @param collection [Collection]
+  # @return [void]
   def setup_test_plate(collection:)
     qpcr_reaction = Sample.find_by_name('Test qPCR Reaction')
 
@@ -185,6 +206,11 @@ class Protocol
     inspect_data_associations(collection: collection)
   end
 
+  # Show all the non-empty wells of the test plate
+  # @todo figure out what you really want to show here
+  #
+  # @param collection [Collection]
+  # @return [void]
   def show_result(collection:)
     show do
       title 'Test Plate Setup'
@@ -192,6 +218,10 @@ class Protocol
     end
   end
 
+  # Inspect a subset of the parts and their data associations
+  #
+  # @param collection [Collection]
+  # @return [void]
   def inspect_data_associations(collection:)
     [[0, 0], [0, 3], [0, 8]].each do |r, c|
       part = collection.part(r, c)
