@@ -18,7 +18,7 @@ class Protocol
   #
   def default_job_params
     {
-      rna_extraction_kit: TestRNAExtractionKit::NAME
+      rna_extraction_kit: QiagenRNeasyMiniKit::NAME
     }
   end
 

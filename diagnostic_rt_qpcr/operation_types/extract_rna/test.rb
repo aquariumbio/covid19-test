@@ -2,13 +2,7 @@
 
 class ProtocolTest < ProtocolTestBase
   def setup
-    add_operation
-      .with_input('Specimen', Sample.find_by_name('Test Respiratory Specimen 1'))
-      .with_property(
-        'Options',
-        '{ "rna_extraction_kit": "Qiagen RNeasy Mini Kit", "expert": false }'
-      )
-      # .with_output('Specimen', Sample.find_by_name('Test RNA'))
+    add_random_operations(1)
   end
 
   def analyze

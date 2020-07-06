@@ -8,18 +8,16 @@ needs 'Standard Libs/Pipettors'
 needs 'Standard Libs/LabwareNames'
 needs 'Collection Management/CollectionActions'
 needs 'Collection Management/CollectionDisplay'
-# needs 'Collection Management/CollectionTransfer'
-# needs 'Collection Management/CollectionLocation'
-# needs 'Collection Management/CollectionData'
 needs 'Microtiter Plates/PlateLayoutGenerator'
 needs 'PCR Libs/PCRComposition'
+needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
 # Protocol for setting up a master mix plate for RT-qPCR
 # @note Instructions adapted from the CDC COVID-19 detection protocol
 #   https://www.fda.gov/media/134922/download
 #
 # 12) Prior to moving to the nucleic acid handling area, prepare the
-#   No Template Control (NTC) eactions for column #1 in the
+#   No Template Control (NTC) reactions for column #1 in the
 #   assay preparation area.
 #
 # 13) Pipette 5 uL of nuclease-free water into the NTC sample wells
@@ -40,9 +38,9 @@ class Protocol
   # Collection Management
   include CollectionActions
   include CollectionDisplay
-  # include CollectionTransfer
-  # include CollectionLocation
-  # include CollectionData
+
+  # Diagnostic RT-qPCR
+  include DataAssociationKeys
 
   WATER = 'Molecular Grade Water'
   RNA_FREE_WORKSPACE = 'reagent set-up room'
@@ -68,8 +66,7 @@ class Protocol
   def default_operation_params
     {
       program_name: 'CDC_TaqPath_CG',
-      sample_group_size: 3,
-
+      sample_group_size: 3
     }
   end
 
@@ -97,15 +94,24 @@ class Protocol
     {}
   end
 
+  # Group_Size and Program name are attributes of the plate
+  # and should be associated to the plate from Prepare Master Mix
   def add_no_template_controls(operations:)
     operations.each do |op|
+      group_size = op.input(PLATE).collection.get(GROUP_SIZE_KEY)
+      program_name = op.input(PLATE).collection.get(COMPOSITION_NAME_KEY)
+
+      if debug
+        group_size = 3
+        program_name = 'CDC_TaqPath_CG'
+      end
+
       layout_generator = PlateLayoutGeneratorFactory.build(
-        group_size: op.temporary[:options][:sample_group_size],
-        method: :cdc_sample_layout
+        group_size: group_size # op.temporary[:options][:sample_group_size]
       )
       layout_group = layout_generator.next_group
       composition = PCRCompositionFactory.build(
-        program_name: op.temporary[:options][:program_name]
+        program_name: program_name # op.temporary[:options][:program_name]
       )
       volume = composition.water.qty_display
       collection = op.output(PLATE).collection

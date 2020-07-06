@@ -6,31 +6,24 @@ module PrepareRTqPCRValidation
   #
   # @param operations [OperationList] list of operations
   # @raise rescue will Error any operations that do not pass validation
-  def validate(operations:)
-    input_errors = []
-    content_errors = []
-    all_errors = []
+  def validate(operation:, job_params:)
+    valid_op = true
 
-    operations.each do |op|
-      valid_input, input_error = validate_inputs(op)
-      valid_contents, content_error = validate_contents(op)
-      unless valid_input
-        all_errors.push(op)
-        input_errors.push({op: op, error: input_error})
-        op.error(:IncompatibleInputsError, input_error)
-      end
-
-      unless valid_contents
-        all_errors.push(op)
-        content_errors.push({op: op, error: content_error})
-        op.error(:InvalidContentsError, content_error)
-      end
+    valid_input, input_error = validate_inputs(operation, job_params)
+    valid_contents, content_error = validate_contents(operation, job_params)
+    unless valid_input
+      valid_op = false
+      operation.error(:IncompatibleInputsError, input_error)
+      display_error([{ op: operation, error: content_error }])
     end
 
-    display_error(input_errors) unless input_errors.empty?
-    display_error(content_errors) unless content_errors.empty?
+    unless valid_contents
+      valid_op = false
+      operation.error(:InvalidContentsError, content_error)
+      display_error([{ op: operation, error: content_error }])
+    end
 
-    all_errors
+    valid_op
   end
 
   def display_error(error_list)
@@ -47,17 +40,15 @@ module PrepareRTqPCRValidation
     end
   end
 
-  def validate_contents(op)
+  def validate_contents(op, job_params)
     [true, nil]
   end
 
-  def validate_inputs(op)
-    #[failed/passed, message]
+  def validate_inputs(op, job_params)
     [true, nil]
   end
 
   class IncompatibleInputsError < ProtocolError; end
   class InvalidContentsError < ProtocolError; end
 
-  
 end

@@ -8,11 +8,9 @@ needs 'Standard Libs/Pipettors'
 needs 'Standard Libs/LabwareNames'
 needs 'Collection Management/CollectionActions'
 needs 'Collection Management/CollectionDisplay'
-# needs 'Collection Management/CollectionTransfer'
-# needs 'Collection Management/CollectionLocation'
-# needs 'Collection Management/CollectionData'
 needs 'Microtiter Plates/PlateLayoutGenerator'
 needs 'PCR Libs/PCRComposition'
+needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
 # Protocol for setting up a master mix plate for RT-qPCR
 # @note Instructions adapted from the CDC COVID-19 detection protocol
@@ -66,9 +64,9 @@ class Protocol
   # Collection Management
   include CollectionActions
   include CollectionDisplay
-  # include CollectionTransfer
-  # include CollectionLocation
-  # include CollectionData
+
+  # Diagnostic RT-qPCR
+  include DataAssociationKeys
 
   WATER = 'Molecular Grade Water'
   RNA_FREE_WORKSPACE = 'reagent set-up room'
@@ -95,6 +93,7 @@ class Protocol
   def default_operation_params
     {
       number_of_reactions: 24,
+      group_size: 3,
       program_name: 'CDC_TaqPath_CG'
     }
   end
@@ -116,7 +115,7 @@ class Protocol
 
     provision_plates(
       operations: operations,
-      object_type: '96-well qPCR Reaction'
+      object_type: '96-well qPCR Plate'
     )
 
     prepare_materials(operations: operations)
@@ -153,12 +152,19 @@ class Protocol
 
   def prepare_master_mix(operation:)
     primer_mixes = operation.input_array(PRIMER_MIX).map(&:item)
+    output_collection = operation.output(PLATE).collection
+
     label_master_mix_tubes(labels: primer_mixes.map { |item| item.sample.name })
 
-    group_size = operation.temporary[:options][:number_of_reactions]
+    group_size = operation.temporary[:options][:group_size]
+    program_name = operation.temporary[:options][:program_name]
     composition = PCRCompositionFactory.build(
-      program_name: operation.temporary[:options][:program_name]
+      program_name: program_name
     )
+
+    output_collection.associate(COMPOSITION_NAME_KEY, program_name)
+    output_collection.associate(GROUP_SIZE_KEY, group_size)
+
     pipet_master_mix_components(
       primer_mixes: primer_mixes,
       composition: composition,
@@ -167,14 +173,14 @@ class Protocol
 
     layout_generator = PlateLayoutGeneratorFactory.build(
       group_size: group_size,
-      method: :cdc_primer_layout
+      method: :primer_layout
     )
     primer_mixes.each do |primer_mix|
       pipet_master_mix(
         primer_mix: primer_mix,
         volume: composition.sum_added_components,
         layout_group: layout_generator.next_group,
-        collection: operation.output(PLATE).collection
+        collection: output_collection
       )
     end
 

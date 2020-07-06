@@ -1,30 +1,30 @@
 {
-  "id": 28,
+  "id": 18,
   "name": "Extract RNA HTP",
   "parent_class": "OperationType",
   "category": "Diagnostic RT-qPCR",
   "inputs": [
     {
       "name": "Specimen",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": "S"
     },
     {
       "name": "Options",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": null
     }
   ],
   "outputs": [
     {
       "name": "Specimen",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": "T"
     }
   ],
-  "on_the_fly": null,
+  "on_the_fly": false,
   "user_id": 1
 }
