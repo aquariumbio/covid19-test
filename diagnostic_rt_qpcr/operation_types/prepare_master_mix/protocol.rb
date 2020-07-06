@@ -137,14 +137,12 @@ class Protocol
     operations.each do |op|
       collection = make_new_plate(object_type, label_plate: true)
       op.output(PLATE).set(collection: collection)
-      # TODO: Need to make this use the real sample
-      qpcr_reaction = Sample.find_by_name('Test qPCR Reaction')
 
       set_parts(
         collection: collection,
         group_size: op.temporary[:options][:group_size],
         method: op.temporary[:options][:layout_method],
-        sample: qpcr_reaction
+        sample: op.output(PLATE).sample
       )
 
       inspect op.output(PLATE).collection.matrix if debug
@@ -344,7 +342,7 @@ class Protocol
 
       note 'Mix buffer, enzyme, and primer/probes by inversion 5 times.'
       note 'Centrifuge reagents and primers/probes for 5 seconds to collect' \
-        'contents at the bottom of the tube.'
+        ' contents at the bottom of the tube.'
       note 'Place the tubes on ice or in a cold-block.'
     end
   end
