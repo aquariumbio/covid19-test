@@ -11,19 +11,13 @@
       "routing": "T"
     },
     {
-      "name": "Options",
-      "part": false,
-      "array": false,
-      "routing": null
-    },
-    {
       "name": "PCR Plate",
       "part": false,
       "array": false,
       "routing": "P"
     },
     {
-      "name": "Assay Type",
+      "name": "Options",
       "part": false,
       "array": false,
       "routing": null
