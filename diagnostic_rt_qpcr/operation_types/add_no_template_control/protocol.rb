@@ -1,16 +1,8 @@
 # typed: false
 # frozen_string_literal: true
 
-needs 'Standard Libs/PlanParams'
-needs 'Standard Libs/CommonInputOutputNames'
-needs 'Standard Libs/Debug'
-needs 'Standard Libs/Pipettors'
-needs 'Standard Libs/LabwareNames'
-needs 'Collection Management/CollectionActions'
-needs 'Collection Management/CollectionDisplay'
-needs 'Microtiter Plates/PlateLayoutGenerator'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'PCR Libs/PCRComposition'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 needs 'Microtiter Plates/MicrotiterPlates'
 
 # Protocol for setting up a master mix plate for RT-qPCR
@@ -29,23 +21,7 @@ needs 'Microtiter Plates/MicrotiterPlates'
 #
 # @author Devin Strickland <strcklnd@uw.edu>
 class Protocol
-  # Standard Libs
-  include PlanParams
-  include CommonInputOutputNames
-  include Debug
-  include Pipettors
-  include LabwareNames
-
-  # Collection Management
-  include CollectionActions
-  include CollectionDisplay
-
-  # Diagnostic RT-qPCR
-  include DataAssociationKeys
-
-  WATER = 'Molecular Grade Water'
-  RNA_FREE_WORKSPACE = 'reagent set-up room'
-  PLATE = 'PCR Plate'
+  include DiagnosticRTqPCRHelper
 
   ########## DEFAULT PARAMS ##########
 
