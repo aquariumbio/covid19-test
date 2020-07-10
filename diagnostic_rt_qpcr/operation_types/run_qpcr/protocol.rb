@@ -63,8 +63,6 @@ class Protocol
       JSON.parse(thermo.value)
     end
 
-    inspect available_thermocyclers.length.to_s
-
     operations.each_slice(available_thermocyclers.length).each do |ops_list|
 
       composition = PCRCompositionFactory.build(
@@ -74,8 +72,9 @@ class Protocol
         program_name: @job_params[:program_name],
         volume: composition.volume
       )
+      running_thermocyclers = []
 
-      available_thermocyclers.zip(ops_list).each_with_index do |thermo_type, op, idx|
+      available_thermocyclers.zip(ops_list).each do |thermo_type, op|
         break if op.nil?
 
         plate = op.input(INPUT_REACTIONS).item
@@ -98,10 +97,18 @@ class Protocol
           items: plate,
           experiment_filename: experiment_filename
         )
+        running_thermocyclers.push({ thermocycler: thermocycler,
+                                     thermo_name: thermo_type['name'],
+                                     plate: plate,
+                                     experiment_filename: experiment_filename })
+      end
 
-        export_measurements(thermocycler: thermocycler)
+      running_thermocyclers.each do |info_hash|
+        go_to_thermocycler(thermocycler_name: info_hash[:thermo_name] )
+        export_measurements(thermocycler: info_hash[:thermocycler])
 
-        associate_measurement(file_name: experiment_filename, plate: plate)
+        associate_measurement(file_name: info_hash[:experiment_filename],
+                              plate: info_hash[:plate])
       end
 
     end
@@ -116,11 +123,11 @@ class Protocol
     plate.associate(RAW_QPCR_DATA_KEY, file)
   end
 
-  def go_to_thermocycler(thermocycler_name:, plate:)
+  def go_to_thermocycler(thermocycler_name:, plate: nil)
     show do
       title 'Go to Thermocycler'
-      note "Take #{plate.object_type.name} <b>#{plate.id}</b>"\
-           "to Thermocycler #{thermocycler_name}"
+      note "Take the #{plate.object_type.name} <b>#{plate.id}</b>"\
+           " to Thermocycler #{thermocycler_name}" unless plate.nil?
       note "Complete the next few steps at Thermocycler #{thermocycler_name}"
     end
   end
