@@ -1,16 +1,9 @@
 # typed: false
 # frozen_string_literal: true
 
-needs 'Standard Libs/PlanParams'
-needs 'Standard Libs/CommonInputOutputNames'
-needs 'Standard Libs/Debug'
-needs 'Standard Libs/Pipettors'
-needs 'Standard Libs/LabwareNames'
-needs 'Collection Management/CollectionActions'
-needs 'Collection Management/CollectionDisplay'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Microtiter Plates/MicrotiterPlates'
 needs 'PCR Libs/PCRComposition'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
 # Protocol for setting up a master mix plate for RT-qPCR
 # @note Instructions adapted from the CDC COVID-19 detection protocol
@@ -54,24 +47,7 @@ needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 #
 # @author Devin Strickland <strcklnd@uw.edu>
 class Protocol
-  # Standard Libs
-  include PlanParams
-  include CommonInputOutputNames
-  include Debug
-  include Pipettors
-  include LabwareNames
-
-  # Collection Management
-  include CollectionActions
-  include CollectionDisplay
-
-  # Diagnostic RT-qPCR
-  include DataAssociationKeys
-
-  WATER = 'Molecular Grade Water'
-  RNA_FREE_WORKSPACE = 'reagent set-up room'
-  PLATE = 'PCR Plate'
-  PRIMER_MIX = 'Primer/Probe Mix'
+  include DiagnosticRTqPCRHelper
 
   ########## DEFAULT PARAMS ##########
 
@@ -92,7 +68,6 @@ class Protocol
   #
   def default_operation_params
     {
-      number_of_reactions: 24,
       group_size: 24,
       program_name: 'CDC_TaqPath_CG',
       layout_method: 'cdc_primer_layout'
@@ -111,7 +86,7 @@ class Protocol
 
     provision_plates(
       operations: operations,
-      object_type: '96-well qPCR Plate'
+      object_type: PLATE_OBJECT_TYPE
     )
 
     prepare_materials(operations: operations)
@@ -132,7 +107,7 @@ class Protocol
   #
   # @param operations [OperationList]
   # @param object_type [String] the ObjectType of the collection to be made
-  # @return void
+  # @return [void]
   def provision_plates(operations:, object_type:)
     operations.each do |op|
       collection = make_new_plate(object_type, label_plate: true)
@@ -156,7 +131,7 @@ class Protocol
   # @param group_size [Fixnum]
   # @param method [String] a PlateLayoutGenerator method
   # @param sample [Sample] the Sample to add to the collection
-  # @return void
+  # @return [void]
   def set_parts(collection:, group_size:, method:, sample:)
     layout_generator = PlateLayoutGeneratorFactory.build(
       group_size: group_size,
@@ -172,44 +147,82 @@ class Protocol
 
   # Prepare workspace and materials
   #
-  # @todo Make this handle master mix or enzyme with separate buffer dynamically
+  # @todo Make this handle master mix or enzyme with separate
+  #   buffer dynamically
   # @param operations [OperationList]
+  # @return [void]
   def prepare_materials(operations:)
     show_prepare_workspace
-    operations.retrieve
+    build_compositions(operations: operations)
+    retrieve_by_compositions(operations: operations)
     show_mix_and_spin_reagents
+  end
+
+  # Initialize all `PCRComposition`s for each operation
+  #
+  # @param operations [OperationList]
+  # @return [void]
+  def build_compositions(operations:)
+    operations.each do |operation|
+      primer_mixes = operation.input_array(PRIMER_MIX).map(&:item)
+      compositions = []
+
+      primer_mixes.each do |primer_mix|
+        composition = build_composition(
+          primer_mix: primer_mix,
+          program_name: operation.temporary[:options][:program_name]
+        )
+        compositions.append(composition)
+      end
+
+      operation.temporary[:compositions] = compositions
+    end
+  end
+
+  # Initialize a `PCRComposition` for a given primer mix and program
+  #
+  # @param primer_mix [Item]
+  # @param program_name [String]
+  # @return [PCRComposition]
+  def build_composition(primer_mix:, program_name:)
+    composition = PCRCompositionFactory.build(program_name: program_name)
+    mm_item = master_mix_item(sample: composition.master_mix.sample)
+    composition.master_mix.item = mm_item
+    composition.primer_probe_mix.item = primer_mix
+    composition.water.item = water_item
+    composition
   end
 
   # Assembles a master mix plate for each operation
   #
   # @param operations [OperationList]
-  # @return void
+  # @return [void]
   def assemble_master_mix_plates(operations:)
     operations.each { |op| assemble_master_mix_plate(operation: op) }
   end
 
   # Assembles a master mix plate for an operation
+  # @todo this isn't very efficient for multiple operations that all make the
+  #   same plate
+  # @todo refactor to take collection and compositions as arguments, not
+  #   operation
   #
   # @param operation [Operation]
-  # @return void
+  # @return [void]
   def assemble_master_mix_plate(operation:)
-    primer_mixes = operation.input_array(PRIMER_MIX).map(&:item)
-    output_collection = operation.output(PLATE).collection
-
-    show_label_mmix_tubes(labels: primer_mixes.map { |pm| pm.sample.name })
+    compositions = operation.temporary[:compositions]
+    pp_labels = compositions.map { |c| c.primer_probe_mix.sample.name }
+    show_label_mmix_tubes(labels: pp_labels)
 
     group_size = operation.temporary[:options][:group_size]
     program_name = operation.temporary[:options][:program_name]
-    composition = PCRCompositionFactory.build(
-      program_name: program_name
-    )
 
-    output_collection.associate(COMPOSITION_NAME_KEY, program_name)
+    output_collection = operation.output(PLATE).collection
     output_collection.associate(GROUP_SIZE_KEY, group_size)
+    output_collection.associate(COMPOSITION_NAME_KEY, program_name)
 
-    master_mixes = make_master_mixes(
-      primer_mixes: primer_mixes,
-      composition: composition,
+    make_master_mixes(
+      compositions: compositions,
       sample_number: sample_number_with_excess(sample_number: group_size)
     )
 
@@ -218,52 +231,54 @@ class Protocol
       group_size: group_size,
       method: :cdc_primer_layout
     )
-    master_mixes.each do |master_mix|
+
+    pipet_master_mixes(
+      compositions: compositions,
+      microtiter_plate: microtiter_plate
+    )
+  end
+
+  # Makes large volume master mixes to be distributed among wells
+  # @todo Make this address each composition in full
+  #
+  # @param compositions [Array<PCRComposition>]
+  # @param sample_number [Fixnum] the number samples for each primer
+  # @return [void]
+  def make_master_mixes(compositions:, sample_number:)
+    show_make_master_mixes(
+      compositions: compositions,
+      sample_number: sample_number
+    )
+  end
+
+  # Distribute each master mix among wells on the plate
+  #
+  # @param compositions [Array<PCRComposition>]
+  # @param microtiter_plate [MicrotiterPlate]
+  # @return [void]
+  def pipet_master_mixes(compositions:, microtiter_plate:)
+    compositions.each do |composition|
       pipet_master_mix(
-        master_mix: master_mix,
-        volume: composition.sum_added_components,
+        composition: composition,
         microtiter_plate: microtiter_plate
       )
     end
   end
 
-  # Makes large volume master mixes to be distributed among wells
-  #
-  # @param primer_mixes [Array<Item>]
-  # @param composition [PCRComposition]
-  # @param sample_number [Fixnum] the number samples for each primer
-  # @return [Array<Hash>] a data structure that documents the provenance of the
-  #   master mixes
-  def make_master_mixes(primer_mixes:, composition:, sample_number:)
-    show_make_master_mixes(
-      primer_mixes: primer_mixes,
-      composition: composition,
-      sample_number: sample_number
-    )
-
-    build_master_mix_data(
-      primer_mixes: primer_mixes,
-      composition: composition
-    )
-  end
-
   # Pipet the master mixes to individual wells
   #
-  # @todo make volume a qty, units Hash
-  # @param master_mix [Hash] a data structure documenting the provenance of the
-  #   master mix
-  # @param volume [Numeric]
+  # @param composition [PCRComposition]
   # @param microtiter_plate [MicrotiterPlate]
-  # @return void
-  def pipet_master_mix(master_mix:, volume:, microtiter_plate:)
+  # @return [void]
+  def pipet_master_mix(composition:, microtiter_plate:)
     layout_group = microtiter_plate.associate_next_empty_group(
       key: MASTER_MIX_KEY,
-      data: master_mix[:data]
+      data: added_component_data(composition: composition)
     )
 
     show_pipet_mmix(
-      primer_mix_name: master_mix[:primer_mix].sample.name,
-      volume: volume,
+      primer_mix_name: composition.primer_probe_mix.sample.name,
+      volume: composition.sum_added_components(0),
       collection: microtiter_plate.collection,
       layout_group: layout_group
     )
@@ -280,58 +295,7 @@ class Protocol
     sample_number < 15 ? sample_number + 1 : sample_number + 2
   end
 
-  # Build the data structure that documents the provenance of the
-  #   master mixes
-  #
-  # @param primer_mixes [Array<Item>]
-  # @param composition [PCRComposition]
-  # @return [Array<Hash>] a data structure that documents the provenance of the
-  #   master mixes
-  def build_master_mix_data(primer_mixes:, composition:)
-    master_mixes = []
-    primer_mixes.each do |primer_mix|
-      mm = master_mix_data(primer_mix: primer_mix, composition: composition)
-      master_mixes.append(mm)
-    end
-    master_mixes
-  end
-
-  # Build the data structure that documents the provenance of a
-  #   master mix
-  #
-  # @param primer_mix [Item]
-  # @param composition [PCRComposition]
-  # @return [Hash] a data structure that documents the provenance of a
-  #   master mix
-  def master_mix_data(primer_mix:, composition:)
-    {
-      primer_mix: primer_mix,
-      data: {
-        PRIMER_PROBE_MIX_KEY => {
-          item_id: primer_mix.id,
-          volume: composition.primer_probe_mix.qty_display
-        },
-        MASTER_MIX_STOCK_KEY => {
-          sample_name: composition.master_mix.display_name,
-          volume: composition.master_mix.qty_display
-        }
-      }
-    }
-  end
-
   ########## SHOW METHODS ##########
-
-  # Instruct technician to do everything necessary to prepare the workspace
-  #
-  # @return [void]
-  def show_prepare_workspace
-    show do
-      title 'Prepare workspace'
-
-      note "All tasks in this protocol occur in the #{RNA_FREE_WORKSPACE}."
-      note 'As you retrieve reagents, place them on ice or in a cold-block.'
-    end
-  end
 
   # Instruct technician to mix the incoming reagents and spin down the tubes
   #
@@ -365,17 +329,16 @@ class Protocol
   # Instruct technician to make large volume master mixes to be
   #   distributed among wells
   #
-  # @param primer_mixes [Array<Item>]
-  # @param composition [PCRComposition]
+  # @param compositions [Array<PCRComposition>]
   # @param sample_number [Fixnum]
   # @return [void]
-  def show_make_master_mixes(primer_mixes:, composition:, sample_number:)
+  def show_make_master_mixes(compositions:, sample_number:)
     show do
       title 'Pipet master mix components'
 
       note 'Pipet the following components into each labeled master mix tube'
       table master_mix_table(
-        composition: composition,
+        compositions: compositions,
         sample_number: sample_number
       )
       separator
@@ -383,8 +346,7 @@ class Protocol
       note 'Pipet the primer/probe mixes into each corresponding' \
         ' master mix tube'
       table primer_probe_table(
-        primer_mixes: primer_mixes,
-        composition: composition,
+        compositions: compositions,
         sample_number: sample_number
       )
     end
@@ -411,13 +373,21 @@ class Protocol
 
   # Build table for volumes of master mix components
   #
-  # @param composition [PCRComposition]
+  # @param compositions [Array<PCRComposition>]
   # @param sample_number [Fixnum]
   # @return [Array<Array>] a 2D array formatted for the `table` method in Krill
-  def master_mix_table(composition:, sample_number:)
+  def master_mix_table(compositions:, sample_number:)
+    # This is a hack because otherwise only the first composition gets
+    #   marked as added
+    compositions.each do |composition|
+      composition.master_mix.added = true
+      composition.water.added = true
+    end
+
+    composition = compositions.first
     header = [
       'Component',
-      composition.master_mix.display_name,
+      composition.master_mix.sample.name,
       composition.water.display_name
     ]
     row = [
@@ -430,29 +400,32 @@ class Protocol
 
   # Build table for volumes of master mix components
   #
-  # @param composition [PCRComposition]
+  # @param compositions [Array<PCRComposition>]
   # @param sample_number [Fixnum]
   # @return [Array<Array>] a 2D array formatted for the `table` method in Krill
-  def primer_probe_table(primer_mixes:, composition:, sample_number:)
+  def primer_probe_table(compositions:, sample_number:)
     table = [[
-      composition.primer_probe_mix.display_name,
+      compositions.first.primer_probe_mix.display_name,
       'Item',
       "Volume (#{MICROLITERS})"
     ]]
-    primer_mixes.each do |primer_mix|
+    compositions.each do |composition|
+      pp_mix = composition.primer_probe_mix
       row = [
-        primer_mix.sample.name,
-        primer_mix.to_s,
-        composition.primer_probe_mix.add_in_table(sample_number)
+        pp_mix.sample.name,
+        pp_mix.item.to_s,
+        pp_mix.add_in_table(sample_number)
       ]
       table.append(row)
     end
     table
   end
 
+  private
+
   def inspect_data_associations(operation:)
     collection = operation.output(PLATE).collection
-    [[0, 0], [0, 3], [0, 8]].each do |r, c|
+    [[0, 0], [1, 3], [2, 8]].each do |r, c|
       part = collection.part(r, c)
       inspect part, "part at #{[r, c]}"
       inspect part.associations, "data at #{[r, c]}"
