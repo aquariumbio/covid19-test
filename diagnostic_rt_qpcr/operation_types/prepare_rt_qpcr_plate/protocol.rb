@@ -5,7 +5,7 @@ needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
 needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 needs 'PCR Libs/PCRComposition'
-needs 'Microtiter Plates/MicrotiterPlate'
+needs 'Microtiter Plates/MicrotiterPlates'
 needs 'Collection Management/CollectionTransfer'
 
 # Protocol for setting up a plate with extracted RNA samples
@@ -19,8 +19,6 @@ class Protocol
   include CollectionTransfer
   include DataAssociationKeys
 
-  METHOD = :cdc_sample_layout
-
   # Default parameters that are applied equally to all operations.
   #   Can be overridden by:
   #   * Associating a JSON-formatted list of key, value pairs to the `Plan`.
@@ -29,7 +27,6 @@ class Protocol
   #
   def default_job_params
     {
-      max_inputs: 24
     }
   end
 
@@ -42,8 +39,9 @@ class Protocol
     {
       negative_template_control: nil,
       negative_template_location: nil,
-      positive_template_control: 'Test nCoVPC',
-      positive_template_location: [0, 11]
+      positive_template_control: 'nCoVPC',
+      positive_template_location: [0, 11],
+      max_inputs: 24
     }
   end
 
@@ -70,13 +68,14 @@ class Protocol
     operations.each do |op|
       op.pass(PLATE)
       output_collection = op.output(PLATE).collection
-      group_size = output_collection.get(:group_size)
-      program_name = output_collection.get(:program_name)
+      group_size = output_collection.get(SAMPLE_GROUP_SIZE_KEY)
+      method = output_collection.get(SAMPLE_METHOD_KEY)
+      program_name = output_collection.get(COMPOSITION_NAME_KEY)
 
       microtiter_plate = MicrotiterPlateFactory.build(
         collection: output_collection,
         group_size: group_size,
-        method: METHOD
+        method: method
       )
 
       composition = PCRCompositionFactory.build(
@@ -162,7 +161,7 @@ class Protocol
   # @param operations [OperationList]
   def validate(operations:)
     operations.each do |op|
-      if op.input_array(TEMPLATE).length > @job_params[:max_inputs]
+      if op.input_array(TEMPLATE).length > op.temporary[:options][:max_inputs]
         raise IncompatibleInputsError, "Too many inputs for Operation #{op.id}"
       end
     end
