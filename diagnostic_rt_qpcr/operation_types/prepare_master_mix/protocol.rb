@@ -193,52 +193,6 @@ class Protocol
     composition
   end
 
-  # Finds a master mix Item in inventory
-  #
-  # @param sample [Sample] of qPCR Master Mix
-  # @return [Item]
-  def master_mix_item(sample:)
-    get_item(
-      sample: sample,
-      object_type_name: MASTER_MIX_OBJECT_TYPE
-    )
-  end
-
-  # Finds a water Item in inventory
-  #
-  # @return [Item]
-  def water_item
-    get_item(
-      sample: Sample.find_by_name(WATER),
-      object_type_name: WATER_OBJECT_TYPE
-    )
-  end
-
-  # Finds an Item in inventory for the given `Sample` and `ObjectType`
-  # @todo replace with a back-end method such as `Sample.in`
-  #
-  # @param sample [Sample]
-  # @param object_type_name [String]
-  # @return [Item]
-  def get_item(sample:, object_type_name:)
-    Item.with_sample(sample: sample)
-        .where(object_type: ObjectType.find_by_name(object_type_name))
-        .reject(&:deleted?)
-        .first
-  end
-
-  # Retrieve `Item`s required for the protocol based on what's in
-  #   the compositions that are attached to the operations
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def retrieve_by_compositions(operations:)
-    compositions = operations.map { |op| op.temporary[:compositions] }.flatten
-    items = compositions.map(&:items).flatten.compact.uniq
-    items = items.sort_by(&:object_type_id)
-    take(items, interactive: true)
-  end
-
   # Assembles a master mix plate for each operation
   #
   # @param operations [OperationList]
@@ -319,7 +273,7 @@ class Protocol
   def pipet_master_mix(composition:, microtiter_plate:)
     layout_group = microtiter_plate.associate_next_empty_group(
       key: MASTER_MIX_KEY,
-      data: master_mix_data(composition: composition)
+      data: added_component_data(composition: composition)
     )
 
     show_pipet_mmix(
@@ -341,43 +295,7 @@ class Protocol
     sample_number < 15 ? sample_number + 1 : sample_number + 2
   end
 
-  # Build the data structure that documents the provenance of a
-  #   master mix
-  #
-  # @param primer_mix [Item]
-  # @param composition [PCRComposition]
-  # @return [Hash] a data structure that documents the provenance of a
-  #   master mix
-  def master_mix_data(composition:)
-    composition.added_components.map { |component| serialize(component) }
-  end
-
-  # Reduce a `ReactionComponent` (part of a `PCRComposition`) to a simplified
-  #   serialized representation that is compatible with `PartProvenance`
-  #
-  # @param component [ReactionComponent]
-  # @return [Hash]
-  def serialize(component)
-    {
-      name: component.input_name,
-      id: component.item.id,
-      volume: component.volume_hash
-    }
-  end
-
   ########## SHOW METHODS ##########
-
-  # Instruct technician to do everything necessary to prepare the workspace
-  #
-  # @return [void]
-  def show_prepare_workspace
-    show do
-      title 'Prepare workspace'
-
-      note "All tasks in this protocol occur in the #{RNA_FREE_WORKSPACE}."
-      note 'As you retrieve reagents, place them on ice or in a cold-block.'
-    end
-  end
 
   # Instruct technician to mix the incoming reagents and spin down the tubes
   #
