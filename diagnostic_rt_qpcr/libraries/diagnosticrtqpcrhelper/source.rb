@@ -64,6 +64,33 @@ module DiagnosticRTqPCRHelper
     end
   end
 
+  # TODO: Think about how to switch this to row-wise addition.
+  # Adds samples to to collections, provides instructions to tech
+  #
+  # @param operation_inputs [Array<items>]
+  # @param collection [Collection]
+  # @param layout_generator [LayoutGenerator]
+  # @param volume [{aty: int, unit: string}]
+  # @param column [int]
+  def add_samples(operation_inputs:, microtiter_plate:,
+                  volume:, column: nil)
+    operation_inputs.each do |fv|
+      item = fv.item
+      layout_group = microtiter_plate.associate_next_empty_group(
+        key: TEMPLATE_KEY,
+        data: { item: item.id, volume: volume },
+        column: column
+      )
+
+      association_map = []
+      layout_group.each { |r, c| association_map.push({ to_loc: [r, c] }) }
+      single_channel_item_to_collection(to_collection: microtiter_plate.collection,
+                                        source: item,
+                                        volume: volume,
+                                        association_map: association_map)
+    end
+  end
+
   # Instruct technician to do everything necessary to prepare the workspace
   #
   # @return [void]
