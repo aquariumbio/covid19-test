@@ -28,14 +28,17 @@ module DiagnosticRTqPCRHelper
   include CollectionDisplay
   include CollectionTransfer
 
-  #Diagnostic RT-qPCR
+  # Diagnostic RT-qPCR
   include DataAssociationKeys
 
   WATER = 'Molecular Grade Water'
-  RNA_FREE_WORKSPACE = 'reagent set-up room'
+  WATER_OBJECT_TYPE = 'Reagent Aliquot'
   PLATE = 'PCR Plate'
+  PLATE_OBJECT_TYPE = '96-well qPCR Plate'
   PRIMER_MIX = 'Primer/Probe Mix'
-  TEMPLATE = 'Template'
+  MASTER_MIX_OBJECT_TYPE = 'qPCR Master Mix Stock'
+
+  RNA_FREE_WORKSPACE = 'reagent set-up room'
 
   def rnase_warning
     show do
@@ -61,31 +64,94 @@ module DiagnosticRTqPCRHelper
     end
   end
 
-  # TODO: Think about how to switch this to row-wise addition.
-  # Adds samples to to collections, provides instructions to tech
+  # Instruct technician to do everything necessary to prepare the workspace
   #
-  # @param operation_inputs [Array<items>]
-  # @param collection [Collection]
-  # @param layout_generator [LayoutGenerator]
-  # @param volume [{aty: int, unit: string}]
-  # @param column [int]
-  def add_samples(operation_inputs:, microtiter_plate:,
-                  volume:, column: nil)
-    operation_inputs.each do |fv|
-      item = fv.item
-      layout_group = microtiter_plate.associate_next_empty_group(
-        key: TEMPLATE_KEY,
-        data: { item: item.id, volume: volume },
-        column: column
-      )
+  # @return [void]
+  def show_prepare_workspace
+    show do
+      title 'Prepare workspace'
 
-      association_map = []
-      layout_group.each { |r, c| association_map.push({ to_loc: [r, c] }) }
-      single_channel_item_to_collection(to_collection: microtiter_plate.collection,
-                                        source: item,
-                                        volume: volume,
-                                        association_map: association_map)
+      note "All tasks in this protocol occur in the #{RNA_FREE_WORKSPACE}."
+      note 'As you retrieve reagents, place them on ice or in a cold-block.'
     end
   end
 
+  ########## COMPOSITION METHODS ##########
+
+  # Finds a master mix Item in inventory
+  #
+  # @param sample [Sample] of qPCR Master Mix
+  # @return [Item]
+  def master_mix_item(sample:)
+    get_item(
+      sample: sample,
+      object_type_name: MASTER_MIX_OBJECT_TYPE
+    )
+  end
+
+  # Finds a water Item in inventory
+  #
+  # @return [Item]
+  def water_item
+    get_item(
+      sample: Sample.find_by_name(WATER),
+      object_type_name: WATER_OBJECT_TYPE
+    )
+  end
+
+  # Finds a water Item in inventory for no template control
+  #
+  # @return [Item]
+  def no_template_control_item
+    water_item
+  end
+
+  # Finds an Item in inventory for the given `Sample` and `ObjectType`
+  # @todo replace with a back-end method such as `Sample.in`
+  #
+  # @param sample [Sample]
+  # @param object_type_name [String]
+  # @return [Item]
+  def get_item(sample:, object_type_name:)
+    Item.with_sample(sample: sample)
+        .where(object_type: ObjectType.find_by_name(object_type_name))
+        .reject(&:deleted?)
+        .first
+  end
+
+  # Retrieve `Item`s required for the protocol based on what's in
+  #   the compositions that are attached to the operations
+  #
+  # @param operations [OperationList]
+  # @return [void]
+  def retrieve_by_compositions(operations:)
+    compositions = operations.map { |op| op.temporary[:compositions] }.flatten
+    items = compositions.map(&:items).flatten.compact.uniq
+    items = items.sort_by(&:object_type_id)
+    take(items, interactive: true)
+  end
+
+  # Build the data structure that documents the provenance of a
+  #   master mix
+  #
+  # @param primer_mix [Item]
+  # @param composition [PCRComposition]
+  # @return [Hash] a data structure that documents the provenance of a
+  #   master mix
+  def added_component_data(composition:)
+    composition.added_components.map { |component| serialize(component) }
+  end
+
+  # Reduce a `ReactionComponent` (part of a `PCRComposition`) to a simplified
+  #   serialized representation that is compatible with `PartProvenance`
+  #
+  # @param component [ReactionComponent]
+  # @return [Hash]
+  def serialize(component)
+    {
+      name: component.input_name,
+      id: component.item.id,
+      volume: component.volume_hash
+    }
+  end
 end
