@@ -60,7 +60,7 @@ class Protocol
     )
     return {} if operations.errored.any?
 
-    operations.retrieve
+    prepare_materials(operations: operations)
 
     operations.each do |op|
       op.pass(PLATE)
@@ -70,6 +70,41 @@ class Protocol
     operations.store
 
     {}
+  end
+
+  # Prepare workspace and materials
+  #
+  # @todo Make this handle master mix or enzyme with separate
+  #   buffer dynamically
+  # @param operations [OperationList]
+  # @return [void]
+  def prepare_materials(operations:)
+    show_prepare_workspace
+    build_compositions(operations: operations)
+    retrieve_by_compositions(operations: operations)
+  end
+
+  # Initialize all `PCRComposition`s for each operation
+  #
+  # @param operations [OperationList]
+  # @return [void]
+  def build_compositions(operations:)
+    operations.each do |operation|
+      composition = build_composition(
+        program_name: operation.temporary[:options][:program_name]
+      )
+      operation.temporary[:compositions] = [composition]
+    end
+  end
+
+  # Initialize a `PCRComposition` for the given program
+  #
+  # @param program_name [String]
+  # @return [PCRComposition]
+  def build_composition(program_name:)
+    composition = PCRCompositionFactory.build(program_name: program_name)
+    composition.template.item = no_template_control_item
+    composition
   end
 
   # Add the no template controls to an Operation's putput collection
@@ -85,16 +120,15 @@ class Protocol
     # program_name = op.input(PLATE).collection.get(COMPOSITION_NAME_KEY)
 
     collection = operation.output(PLATE).collection
+    composition = operation.temporary[:compositions].first
 
-    layout_group = add_ntc_data(
+    microtiter_plate = MicrotiterPlateFactory.build(
       collection: collection,
       group_size: operation.temporary[:options][:group_size],
       method: operation.temporary[:options][:layout_method]
     )
 
-    composition = PCRCompositionFactory.build(
-      program_name: operation.temporary[:options][:program_name]
-    )
+    layout_group = microtiter_plate.next_empty_group(key: TEMPLATE_KEY)
 
     show_add_ntc(
       collection: collection,
@@ -102,29 +136,16 @@ class Protocol
       layout_group: layout_group
     )
 
+    composition.template.added = true
+
+    microtiter_plate.associate_group(
+      group: layout_group,
+      key: TEMPLATE_KEY,
+      data: added_component_data(composition: composition)
+    )
+
     show_result(collection: collection) if debug
     inspect_data_associations(collection: collection) if debug
-  end
-
-  # Add metadata for a group of no template control samples, and return the
-  #   locations of the group
-  #
-  # @param collection [Collection]
-  # @param group_size [Fixnum]
-  # @param method [String]
-  # @return [Array<Array<Fixnum>>]
-  def add_ntc_data(collection:, group_size:, method:)
-    microtiter_plate = MicrotiterPlateFactory.build(
-      collection: collection,
-      group_size: group_size,
-      method: method
-    )
-
-    # TODO: Do we want to have an item number for the water?
-    microtiter_plate.associate_next_empty_group(
-      key: TEMPLATE_KEY,
-      data: WATER
-    )
   end
 
   # Instruct technician to add the no template control samples to the plate
