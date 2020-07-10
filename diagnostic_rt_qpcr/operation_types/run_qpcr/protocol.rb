@@ -5,6 +5,8 @@ needs 'PCR Libs/PCRProgram'
 needs 'Thermocyclers/Thermocyclers'
 needs 'Standard Libs/PlanParams'
 needs 'Standard Libs/Debug'
+needs 'Standard Libs/UploadHelper'
+needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
 # Protocol for loading samples into a qPCR thermocycler and running it
 #
@@ -14,6 +16,8 @@ class Protocol
   include ThermocyclerHelper
   include PlanParams
   include Debug
+  include UploadHelper
+  include DataAssociationKeys
 
   INPUT_REACTIONS = 'qPCR Reactions'
 
@@ -55,35 +59,70 @@ class Protocol
 
     operations.retrieve.make
 
-    composition = PCRCompositionFactory.build(
-      program_name: @job_params[:program_name]
-    )
-    program = PCRProgramFactory.build(
-      program_name: @job_params[:program_name],
-      volume: composition.volume
-    )
-    thermocycler = ThermocyclerFactory.build(
-      model: @job_params[:thermocycler_model]
-    )
+    available_thermocyclers = Parameter.where(key: 'thermocycler').map do |thermo|
+      JSON.parse(thermo.value)
+    end
 
-    set_up_program(
-      thermocycler: thermocycler,
-      program: program,
-      composition: composition,
-      qpcr: @job_params[:qpcr]
-    )
+    inspect available_thermocyclers.length.to_s
 
-    load_plate_and_start_run(
-      thermocycler: thermocycler,
-      items: operations.map { |op| op.input(INPUT_REACTIONS).item },
-      experiment_filename: experiment_filename
-    )
+    operations.each_slice(available_thermocyclers.length).each do |ops_list|
 
-    export_measurements(thermocycler: thermocycler)
+      composition = PCRCompositionFactory.build(
+        program_name: @job_params[:program_name]
+      )
+      program = PCRProgramFactory.build(
+        program_name: @job_params[:program_name],
+        volume: composition.volume
+      )
+
+      available_thermocyclers.zip(ops_list).each_with_index do |thermo_type, op, idx|
+        break if op.nil?
+
+        plate = op.input(INPUT_REACTIONS).item
+
+        thermocycler = ThermocyclerFactory.build(
+          model: thermo_type['model']
+        )
+
+        go_to_thermocycler(thermocycler_name: thermo_type['name'], plate: plate)
+
+        set_up_program(
+          thermocycler: thermocycler,
+          program: program,
+          composition: composition,
+          qpcr: @job_params[:qpcr]
+        )
+
+        load_plate_and_start_run(
+          thermocycler: thermocycler,
+          items: plate,
+          experiment_filename: experiment_filename
+        )
+
+        export_measurements(thermocycler: thermocycler)
+
+        associate_measurement(file_name: experiment_filename, plate: plate)
+      end
+
+    end
 
     operations.store
 
     {}
+  end
+
+  def associate_measurement(file_name:, plate:)
+    file = upload_data(file_name, 1, 4)
+    plate.associate(RAW_QPCR_DATA_KEY, file)
+  end
+
+  def go_to_thermocycler(thermocycler_name:, plate:)
+    show do
+      title 'Go to Thermocycler'
+      note "Take #{plate.object_type.name} <b>#{plate.id}</b>"\
+           "to Thermocycler #{thermocycler_name}"
+      note "Complete the next few steps at Thermocycler #{thermocycler_name}"
+    end
   end
 
   ########## NAMING METHODS ##########
