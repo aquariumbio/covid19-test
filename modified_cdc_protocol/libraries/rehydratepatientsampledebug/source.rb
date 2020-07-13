@@ -7,6 +7,9 @@ module RehydratePatientSampleDebug
 
   SAMPLE_NAMES = ['Test Patient 01', 'Test Patient 02', 'nCoVPC'].freeze
 
+  # Sets up test for debugging
+  #
+  # @param operations [OperationList] list of operations that need to be set up
   def setup_test(operations)
     option = operations.first.input_array('Template').first.collection.collection?
     operations.each do |op|
@@ -14,6 +17,8 @@ module RehydratePatientSampleDebug
     end
   end
 
+  # Generates fake populated stripwells
+  #
   def generate_strip_wells
     samples = SAMPLE_NAMES.map { |sample_name| Sample.find_by_name(sample_name) }
     strip_wells = []

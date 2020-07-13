@@ -104,7 +104,10 @@ class Protocol
 
     {}
   end
-
+    
+  # Directions to vortex samples
+  # @aparam sample_rack [SampleRack]
+  # @param rc_list [Array<[r,c]>] list of all locations that need media
   def vortex_samples(sample_rack:, rc_list: nil)
     rc_list = sample_rack.collection.get_non_empty if rc_list.nil?
 
@@ -118,7 +121,12 @@ class Protocol
       }
     end
   end
-
+  
+  # Directions to transfer media to the collection
+  # @param sample_rack [SampleRack]
+  # @param media [Item]
+  # @param volume [Volume]
+  # @param rc_list [Array<[r,c]>] list of all locations that need media
   def transfer_media_to_collection(sample_rack:, media:, volume:, rc_list:)
     total_vol = { units: volume[:units], qty: (volume[:qty] * rc_list.length) }
     fill_reservoir(media, total_vol)
@@ -133,7 +141,8 @@ class Protocol
                                       association_map: association_map)
     end
   end
-
+  
+  # TODO: This doesn't properly track provenence I dont think
   def track_provenance(sample_rack:, media:, rc_list:)
     rc_list.each do |r, c|
       to_obj = sample_rack.part(r, c)
@@ -145,7 +154,11 @@ class Protocol
       to_obj_map.save
     end
   end
-
+    
+  # Instructions to fill media reservoir
+  #
+  # @param media (item)
+  # @param volume [Volume]
   def fill_reservoir(media, volume)
     show do
       title 'Fill Media Reservoir'
