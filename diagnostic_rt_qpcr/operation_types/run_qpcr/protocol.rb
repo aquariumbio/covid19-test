@@ -21,6 +21,8 @@ class Protocol
 
   INPUT_REACTIONS = 'qPCR Reactions'
 
+  THERMOCYCLER_KEY = 'thermocycler'.to_sym
+
   ########## DEFAULT PARAMS ##########
 
   # Default parameters that are applied equally to all operations.
@@ -31,7 +33,6 @@ class Protocol
   #
   def default_job_params
     {
-      thermocycler_model: TestThermocycler::MODEL,
       program_name: 'CDC_TaqPath_CG',
       qpcr: true
     }
@@ -43,7 +44,9 @@ class Protocol
   #     input of type JSON and named `Options`.
   #
   def default_operation_params
-    {}
+    {
+      thermocycler_model: 'BioRad CFX96' # TestThermocycler::MODEL,
+    }
   end
 
   ########## MAIN ##########
@@ -51,71 +54,81 @@ class Protocol
   def main
     setup_test_options(operations: operations) if debug
 
-    @job_params = update_job_params(
+    @job_params = update_all_params(
       operations: operations,
-      default_job_params: default_job_params
+      default_job_params: default_job_params,
+      default_operation_params: default_operation_params
     )
     return {} if operations.errored.any?
 
+    available_thermocyclers = get_available_thermocyclers
+
+    remove_unavailable_operations(available_thermocyclers)
+
+    return {} if operations.empty?
+
     operations.retrieve.make
 
-    available_thermocyclers = Parameter.where(key: 'thermocycler').map do |thermo|
-      JSON.parse(thermo.value)
-    end
+    composition = PCRCompositionFactory.build(
+      program_name: @job_params[:program_name]
+    )
+    program = PCRProgramFactory.build(
+      program_name: @job_params[:program_name],
+      volume: composition.volume
+    )
 
-    operations.each_slice(available_thermocyclers.length).each do |ops_list|
+    running_thermocyclers = start_thermocyclers(program: program,
+                                                composition: composition)
 
-      composition = PCRCompositionFactory.build(
-        program_name: @job_params[:program_name]
-      )
-      program = PCRProgramFactory.build(
-        program_name: @job_params[:program_name],
-        volume: composition.volume
-      )
-      running_thermocyclers = []
-
-      available_thermocyclers.zip(ops_list).each do |thermo_type, op|
-        break if op.nil?
-
-        plate = op.input(INPUT_REACTIONS).item
-
-        thermocycler = ThermocyclerFactory.build(
-          model: thermo_type['model']
-        )
-
-        go_to_thermocycler(thermocycler_name: thermo_type['name'], plate: plate)
-
-        set_up_program(
-          thermocycler: thermocycler,
-          program: program,
-          composition: composition,
-          qpcr: @job_params[:qpcr]
-        )
-
-        load_plate_and_start_run(
-          thermocycler: thermocycler,
-          items: plate,
-          experiment_filename: experiment_filename
-        )
-        running_thermocyclers.push({ thermocycler: thermocycler,
-                                     thermo_name: thermo_type['name'],
-                                     plate: plate,
-                                     experiment_filename: experiment_filename })
-      end
-
-      running_thermocyclers.each do |info_hash|
-        go_to_thermocycler(thermocycler_name: info_hash[:thermo_name] )
-        export_measurements(thermocycler: info_hash[:thermocycler])
-
-        associate_measurement(file_name: info_hash[:experiment_filename],
-                              plate: info_hash[:plate])
-      end
-
-    end
+    get_data(running_thermocyclers: running_thermocyclers)
 
     operations.store
 
     {}
+  end
+
+  def get_data(running_thermocyclers:)
+    running_thermocyclers.each do |op, thermocycler|
+      go_to_thermocycler(thermocycler_name: op.get(THERMOCYCLER_KEY)['name'])
+      export_measurements(thermocycler: thermocycler)
+
+      associate_measurement(file_name: op.get(RAW_QPCR_DATA_KEY),
+                            plate: op.input(INPUT_REACTIONS).collection)
+    end
+  end
+
+  def start_thermocyclers(program:, composition:)
+    running_thermocyclers = []
+    operations.each do |op|
+      plate = op.input(INPUT_REACTIONS).item
+
+      file_name = experiment_filename(plate)
+
+      thermo_type = op.get(THERMOCYCLER_KEY)
+
+      op.associate(RAW_QPCR_DATA_KEY, file_name)
+
+      thermocycler = ThermocyclerFactory.build(
+        model: thermo_type['model']
+      )
+
+      go_to_thermocycler(thermocycler_name: thermo_type['name'], plate: plate)
+
+      set_up_program(
+        thermocycler: thermocycler,
+        program: program,
+        composition: composition,
+        qpcr: @job_params[:qpcr]
+      )
+
+      load_plate_and_start_run(
+        thermocycler: thermocycler,
+        items: plate,
+        experiment_filename: file_name
+      )
+      running_thermocyclers.push([op, thermocycler])
+    end
+    running_thermocyclers
   end
 
   def associate_measurement(file_name:, plate:)
@@ -132,14 +145,79 @@ class Protocol
     end
   end
 
+  def get_available_thermocyclers
+    thermocyclers = find_thermocyclers
+    available_key = 'available'
+    response = show do
+      title 'Check Available Thermocyclers'
+      note 'Please check which thermocyclers are currently available'
+      thermocyclers.each_with_index do |thermo|
+        select([available_key, 'unavailable'],
+               var: thermo['name'].to_s,
+               label: "Thermocycler #{thermo['name']}")
+      end
+    end
+    available_thermo = []
+    thermocyclers.map do |thermo|
+      next unless response[thermo['name'].to_s] == available_key || debug
+
+      available_thermo.push(thermo)
+    end
+    available_thermo
+  end
+
+  def find_thermocyclers
+    Parameter.where(key: 'thermocycler').map { |thr| JSON.parse(thr.value) }
+  end
+
+  def remove_unavailable_operations(available_thermocyclers)
+    ops_to_remove = find_unavailable_ops(available_thermocyclers)
+    operations.reject! { |op| ops_to_remove.include?(op) }
+    error_op_warning(ops_to_remove)
+    ops_to_remove.each do |op|
+      op.error(:unavailablethermocycler, 'No thermocyclers were available')
+      op.set_status_recursively('pending')
+    end
+  end
+
+  def error_op_warning(ops_to_remove)
+    show do
+      title 'Thermocyclers Unavailable'
+      note 'There are not enough available thermocyclers for this job'
+      warning 'The following plates were removed from this job'
+      ops_to_remove.each do |op|
+        note op.input(INPUT_REACTIONS).collection.id.to_s
+      end
+    end
+  end
+
+  def find_unavailable_ops(thermocyclers)
+    ops_to_remove = []
+    operations.each do |op|
+      available = false
+      thermocyclers.each do |thermo|
+        next unless thermo['model'] == op.temporary[:options][:thermocycler_model] || true
+
+        op.associate(THERMOCYCLER_KEY, thermo)
+        thermocyclers.delete(thermo)
+        available = true
+        break
+      end
+      ops_to_remove.push(op) unless available 
+    end
+    ops_to_remove
+  end
+
+  class UnavailableThermocycler < ProtocolError; end
+
   ########## NAMING METHODS ##########
 
   # Constructs a name for the experiment file.
   #
   # @return [String]
-  def experiment_filename
+  def experiment_filename(plate)
     date = DateTime.now.strftime('%Y-%m-%d')
-    "#{date}_Job_#{job.id}"
+    "#{date}_Job_#{job.id}_#{plate.id}"
   end
 
   # Gets the currently active `Job`
