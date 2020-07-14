@@ -3,11 +3,10 @@
 ## Plate Layout
 Figures 1 & 2 are plate layouts suggested by the [CDC protocol](https://www.fda.gov/media/134922/download). Plates for other protocols will likely follow a similar layout, although the layout will also be dictated by the needs and capabilities of the lab conducting the test.
 
-<img src="/docs/_images/primer_layout.png" alt="Fig. 1: Primer layout for the CDC Protocol" width="600"/>
-**Figure 1**
 
-<img src="/docs/_images/sample_layout.png" alt="Fig. 2: Sample layout for the CDC Protocol" width="600"/>
-**Figure 2**
+<img src="/docs/_images/primer_layout.png" alt="Fig. 1 Primer layout for the CDC Protocol" width="600"/>
+
+<img src="/docs/_images/sample_layout.png" alt="Fig. 2 Sample layout for the CDC Protocol" width="600"/>
 
 ## Data and Metadata Uploaded to TACC
 Plates such as the above are represented in Aquarium exports by the following proposed data structure:
