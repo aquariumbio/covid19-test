@@ -4,12 +4,16 @@
 
 <img src="/docs/_images/sample_layout.png" alt="Sample layout for the CDC Protocol" width="600"/>
 
+Plates such as the above are represented by the following data structure:
+
 ```
 Collection: A 96-well plate or 8-12 well stripwell
 └── Part: A sample from one well
-    └── Metadata: JSON data structure
+    └── Metadata: JSON
 ```
+
 Example JSON for one well:
+
 ```json
 {
   "template": [
@@ -50,3 +54,5 @@ Example JSON for one well:
   ]
 }
 ```
+
+In this example the `master_mix` is a combination of Commercial 4X qPCR Master Mix, Combined Primer/Probe Mix, and Molecular Grade Water (Fig. 1, above), and the `template` is the patient sample or control sample (Fig. 2, above). 
