@@ -7,7 +7,7 @@ class ProtocolTest < ProtocolTestBase
     #   s = Sample.find_by_name("Test qPCR Reaction #{i}")
     #   add_operation
     #     .with_input('qPCR Reactions', s)
-    #     .with_property('Options', '{}')
+    #     .with_property('Options', '{"thermocycler_model": "BioRad CFX96", "program_name": "CDC_qScript_XLT_ToughMix"}')
     #     .with_output('qPCR Reactions', s)
     # end
   end
