@@ -37,6 +37,7 @@ module DiagnosticRTqPCRHelper
   PLATE_OBJECT_TYPE = '96-well qPCR Plate'
   PRIMER_MIX = 'Primer/Probe Mix'
   MASTER_MIX_OBJECT_TYPE = 'qPCR Master Mix Stock'
+  SPECIMEN = 'Specimen'
 
   RNA_FREE_WORKSPACE = 'reagent set-up room'
 
@@ -188,16 +189,28 @@ module DiagnosticRTqPCRHelper
   # @param aliquot_items [Array<Item>] the aliqouts made in the operation
   # @return [void]
   def add_aliquot_provenance(stock_item:, aliquot_items:)
-    stock_association = AssociationMap.new(stock_item)
-    aliquot_associations = aliquot_items.map { |a| [a, AssociationMap.new(a)] }
+    from_map = AssociationMap.new(stock_item)
+    to_maps = aliquot_items.map { |a| [a, AssociationMap.new(a)] }
 
-    aliquot_associations.each do |aliquot_item, aliquot_association|
+    to_maps.each do |aliquot_item, to_map|
       add_provenance(
-        from: stock_item, from_map: stock_association,
-        to: aliquot_item, to_map: aliquot_association
+        from: stock_item, from_map: from_map,
+        to: aliquot_item, to_map: to_map
       )
-      stock_association.save
-      aliquot_association.save
+      from_map.save
+      to_map.save
     end
+  end
+
+  def add_one_to_one_provenance(from_item:, to_item:)
+    from_map = AssociationMap.new(from_item)
+    to_map = AssociationMap.new(to_item)
+
+    add_provenance(
+      from: from_item, from_map: from_map,
+      to: to_item, to_map: to_map
+    )
+    from_map.save
+    to_map.save
   end
 end
