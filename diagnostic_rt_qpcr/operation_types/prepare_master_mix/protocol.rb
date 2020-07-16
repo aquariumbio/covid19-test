@@ -154,44 +154,9 @@ class Protocol
   # @return [void]
   def prepare_materials(operations:)
     show_prepare_workspace
-    build_compositions(operations: operations)
+    build_master_mix_compositions(operations: operations)
     retrieve_by_compositions(operations: operations)
     show_mix_and_spin_reagents
-  end
-
-  # Initialize all `PCRComposition`s for each operation
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def build_compositions(operations:)
-    operations.each do |operation|
-      primer_mixes = operation.input_array(PRIMER_MIX).map(&:item)
-      compositions = []
-
-      primer_mixes.each do |primer_mix|
-        composition = build_composition(
-          primer_mix: primer_mix,
-          program_name: operation.temporary[:options][:program_name]
-        )
-        compositions.append(composition)
-      end
-
-      operation.temporary[:compositions] = compositions
-    end
-  end
-
-  # Initialize a `PCRComposition` for a given primer mix and program
-  #
-  # @param primer_mix [Item]
-  # @param program_name [String]
-  # @return [PCRComposition]
-  def build_composition(primer_mix:, program_name:)
-    composition = PCRCompositionFactory.build(program_name: program_name)
-    mm_item = master_mix_item(sample: composition.master_mix.sample)
-    composition.master_mix.item = mm_item
-    composition.primer_probe_mix.item = primer_mix
-    composition.water.item = water_item
-    composition
   end
 
   # Assembles a master mix plate for each operation
