@@ -138,7 +138,7 @@ class Protocol
 
     composition.template.added = true
 
-    microtiter_plate.associate_group(
+    microtiter_plate.associate_provenance_group(
       group: layout_group,
       key: TEMPLATE_KEY,
       data: added_component_data(composition: composition)
@@ -195,7 +195,7 @@ class Protocol
       layout_group.each do |r, c|
         collection.set(r, c, qpcr_reaction)
         part = collection.part(r, c)
-        part.associate(MASTER_MIX_KEY, { foo: 'bar' })
+        part.associate(MASTER_MIX_KEY, 'added')
       end
     end
 
