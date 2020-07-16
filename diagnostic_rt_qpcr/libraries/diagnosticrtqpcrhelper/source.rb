@@ -167,18 +167,18 @@ module DiagnosticRTqPCRHelper
   # @return [Hash] a data structure that documents the provenance of a
   #   master mix
   def added_component_data(composition:)
-    composition.added_components.map { |component| serialize(component) }
+    composition.added_components.map { |component| collect_data(component) }
   end
 
   # Reduce a `ReactionComponent` (part of a `PCRComposition`) to a simplified
-  #   serialized representation that is compatible with `PartProvenance`
+  #   Hash of selected attributes
   #
   # @param component [ReactionComponent]
   # @return [Hash]
-  def serialize(component)
+  def collect_data(component)
     {
       name: component.input_name,
-      id: component.item.id,
+      item: component.item,
       volume: component.volume_hash
     }
   end

@@ -141,6 +141,7 @@ class Protocol
     loop do
       index = layout_generator.next
       break unless index.present?
+
       collection.set(index[0], index[1], sample)
     end
   end
@@ -271,9 +272,10 @@ class Protocol
   # @param microtiter_plate [MicrotiterPlate]
   # @return [void]
   def pipet_master_mix(composition:, microtiter_plate:)
-    layout_group = microtiter_plate.associate_next_empty_group(
+    data = added_component_data(composition: composition)
+    layout_group = microtiter_plate.associate_provenance_next_empty_group(
       key: MASTER_MIX_KEY,
-      data: added_component_data(composition: composition)
+      data: data
     )
 
     show_pipet_mmix(
