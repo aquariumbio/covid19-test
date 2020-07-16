@@ -150,13 +150,14 @@ class Protocol
   # @param make_aliquots [Item] the lyophilized_RNA
   # @param operations     [OperationList] the list of operations
   def make_aliquots(ops:, lyophilized_rna:)
-    last_tube_id = '' # Empty string for storing item id of single use aliquot
+    last_tube = nil
+
     ops.each do |op|
-      input_rnas = Array.new(OUTPUT_ITEMS_NUM[:qty], lyophilized_rna.id)
-      aliquot_tubes = op.outputs.map{ |output| output.item.id }
-      transfer_table = Table.new
-                            .add_column('Lyophilized RNA', input_rnas)
-                            .add_column('Output RNA Aliquot', aliquot_tubes)
+      input_rnas = Array.new(OUTPUT_ITEMS_NUM[:qty], lyophilized_rna)
+      aliquot_items = op.outputs.map(&:item)
+      table = Table.new
+                   .add_column('Lyophilized RNA', input_rnas.map(&:to_s))
+                   .add_column('Output RNA Aliquot', aliquot_items.map(&:to_s))
 
       show do
         title 'Aliquot Single Used Aliquot Positive Template'
@@ -164,16 +165,26 @@ class Protocol
         #{qty_display(VOL_SUSPENSION)} of the diluted postive control into \
         individual #{TUBE_MICROFUGE} and label it with the proper item ID."
         check 'Discard the empty input tube'
-        table transfer_table
+        table table
       end
 
-      # Discard the input
+      add_aliquot_provenance(
+        stock_item: lyophilized_rna,
+        aliquot_items: aliquot_items
+      )
+
       lyophilized_rna.mark_as_deleted
 
+      if debug
+        aliquot = aliquot_items.last
+        inspect(lyophilized_rna.associations, lyophilized_rna.id)
+        inspect(aliquot.associations, aliquot.id)
+      end
+
       # Retrieve the last item of the single use aliquot
-      last_tube_id = aliquot_tubes[-1]
+      last_tube = aliquot_items.last
     end
-    last_tube_id
+    last_tube.id
   end
 
   # Prepare for plating protocol for a list of operations
