@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
-needs 'Diagnostic RT-qPCR/RNAExtractionHelper'
+needs 'RNA Extraction Kits/RNAExtractionHelper'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
 # Extract RNA Protocol
 #
 # @author Devin Strickland <strcklnd@uw.edu>
 class Protocol
   include RNAExtractionHelper
+  include DiagnosticRTqPCRHelper
 
   ########## DEFAULT PARAMS ##########
 
@@ -18,7 +20,7 @@ class Protocol
   #
   def default_job_params
     {
-      rna_extraction_kit: TestRNAExtractionKit::NAME
+      rna_extraction_kit: QiagenRNeasyMiniKit::NAME
     }
   end
 
@@ -61,8 +63,27 @@ class Protocol
       )
     end
 
+    add_specimen_provenance(operations: operations)
+
     operations.store
 
     {}
+  end
+
+  # Add provenance to SPECIMEN inputs and outputs of operations
+  #
+  # @param operations [OperationList]
+  # @return [void]
+  def add_specimen_provenance(operations:)
+    operations.each do |op|
+      add_one_to_one_provenance(
+        from_item: op.input(SPECIMEN).item,
+        to_item: op.output(SPECIMEN).item
+      )
+    end
+    return unless debug
+
+    inspect(operations.last.input(SPECIMEN).item.associations, 'input')
+    inspect(operations.last.output(SPECIMEN).item.associations, 'output')
   end
 end
