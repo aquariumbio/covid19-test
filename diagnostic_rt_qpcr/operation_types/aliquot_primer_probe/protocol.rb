@@ -139,10 +139,10 @@ class Protocol
     # last_tube_id = '' # keep one of each primer
     ops.each do |op|
       input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer)
-      aliquot_items = op.outputs.map { |output| output.item }
+      aliquot_items = op.outputs.map(&:item)
       table = Table.new
-                   .add_column('Primer Mix ID', input_primers.map(&:id))
-                   .add_column('Destination Tube ID', aliquot_items.map(&:id))
+                   .add_column('Primer Mix ID', input_primers.map(&:to_s))
+                   .add_column('Destination Tube ID', aliquot_items.map(&:to_s))
 
       show do
         title 'Make Aliquots'
