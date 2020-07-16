@@ -136,7 +136,7 @@ class Protocol
   # Make 5 aliquots for each primer
   # @param operations [OperationList] Array of operations grouped by primer
   def make_aliquots(ops:, primer:)
-    last_tube_id = '' # keep one of each primer
+    # last_tube_id = '' # keep one of each primer
     ops.each do |op|
       input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer)
       aliquot_items = op.outputs.map { |output| output.item }
@@ -170,19 +170,5 @@ class Protocol
     # last_tube = Item.find(last_tube_id)
     # last_tube.move(COLD_ROOM)
     # last_tube.store
-  end
-
-  def add_aliquot_provenance(stock_item:, aliquot_items:)
-    stock_association = AssociationMap.new(stock_item)
-    aliquot_associations = aliquot_items.map { |a| [a, AssociationMap.new(a)] }
-
-    aliquot_associations.each do |aliquot_item, aliquot_association|
-      add_provenance(
-        from: stock_item, from_map: stock_association,
-        to: aliquot_item, to_map: aliquot_association
-      )
-      stock_association.save
-      aliquot_association.save
-    end
   end
 end

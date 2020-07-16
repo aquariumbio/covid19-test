@@ -181,4 +181,23 @@ module DiagnosticRTqPCRHelper
       volume: component.volume_hash
     }
   end
+
+  # Add provenance metadata to a stock item and aliquots made from that stock
+  #
+  # @param stock_item [Item] the source item for the aliquot operation
+  # @param aliquot_items [Array<Item>] the aliqouts made in the operation
+  # @return [void]
+  def add_aliquot_provenance(stock_item:, aliquot_items:)
+    stock_association = AssociationMap.new(stock_item)
+    aliquot_associations = aliquot_items.map { |a| [a, AssociationMap.new(a)] }
+
+    aliquot_associations.each do |aliquot_item, aliquot_association|
+      add_provenance(
+        from: stock_item, from_map: stock_association,
+        to: aliquot_item, to_map: aliquot_association
+      )
+      stock_association.save
+      aliquot_association.save
+    end
+  end
 end
