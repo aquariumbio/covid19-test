@@ -2,11 +2,7 @@
 # frozen_string_literal: true
 
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
-needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
-needs 'PCR Libs/PCRComposition'
-needs 'Microtiter Plates/MicrotiterPlate'
-needs 'Collection Management/CollectionTransfer'
+needs 'Microtiter Plates/MicrotiterPlates'
 
 # Protocol for setting up a plate with extracted RNA samples
 #
@@ -14,12 +10,8 @@ needs 'Collection Management/CollectionTransfer'
 # @author Cannon Mallory <malloc3@uw.edu>
 class Protocol
   include DiagnosticRTqPCRHelper
-  include DiagnosticRTqPCRDebug
-  include MicrotiterPlates
-  include CollectionTransfer
-  include DataAssociationKeys
 
-  METHOD = :cdc_sample_layout
+  CONTROL_TYPE_STUBS = %w[negative_template positive_template].freeze
 
   # Default parameters that are applied equally to all operations.
   #   Can be overridden by:
@@ -43,63 +35,30 @@ class Protocol
       negative_template_control: nil,
       negative_template_location: nil,
       positive_template_control: 'Test nCoVPC',
-      positive_template_location: [0, 11]
+      positive_template_location: [0, 11],
+      program_name: 'CDC_TaqPath_CG',
+      group_size: 3,
+      layout_method: 'cdc_sample_layout'
     }
   end
 
   def main
-    #========= Setup Job ==========#
-    setup_test(operations) if debug
+    setup_test_plates(operations: operations) if debug
     @job_params = update_all_params(
       operations: operations,
       default_job_params: default_job_params,
       default_operation_params: default_operation_params
     )
 
-    #========= Validation =========#
     validate(operations: operations)
     return {} if operations.errored.any?
 
-    #====== General Warnings =====#
-    rnase_warning
-    safety_warning
+    prepare_materials(operations: operations)
+    # operations.make
 
-    operations.retrieve.make
-
-    #====== Core Operation ======#
     operations.each do |op|
       op.pass(PLATE)
-      output_collection = op.output(PLATE).collection
-      group_size = output_collection.get(:group_size)
-      program_name = output_collection.get(:program_name)
-
-      microtiter_plate = MicrotiterPlateFactory.build(
-        collection: output_collection,
-        group_size: group_size,
-        method: METHOD
-      )
-
-      composition = PCRCompositionFactory.build(
-        program_name: program_name
-      )
-      volume = { qty: composition.template.qty,
-                 units: composition.template.units }
-
-      remaining_inputs = add_control_samples(
-        operation_inputs: op.input_array(TEMPLATE),
-        microtiter_plate: microtiter_plate,
-        volume: volume,
-        operation_parameters: op.temporary[:options]
-      )
-
-      add_diagnostic_samples(
-        operation_inputs: remaining_inputs,
-        microtiter_plate: microtiter_plate,
-        volume: volume
-      )
-
-      seal_plate(output_collection)
-      show_result(collection: output_collection) if debug
+      add_all_samples(operation: op)
     end
 
     operations.store
@@ -107,30 +66,68 @@ class Protocol
     {}
   end
 
+  def add_all_samples(operation:)
+    collection = operation.output(PLATE).collection
+    remaining_compositions = operation.temporary[:compositions].dup
+    operation_parameters = operation.temporary[:options]
+
+    microtiter_plate = MicrotiterPlateFactory.build(
+      collection: collection,
+      group_size: operation_parameters[:group_size],
+      method: operation_parameters[:layout_method]
+    )
+
+    remaining_compositions = add_control_samples(
+      compositions: remaining_compositions,
+      microtiter_plate: microtiter_plate,
+      operation_parameters: operation_parameters
+    )
+
+    add_diagnostic_samples(
+      compositions: remaining_compositions,
+      microtiter_plate: microtiter_plate
+    )
+
+    seal_plate(collection)
+    show_result(collection: collection) if debug
+  end
+
+  # Prepare workspace and materials
+  #
+  # @todo Make this handle master mix or enzyme with separate
+  #   buffer dynamically
+  # @param operations [OperationList]
+  # @return [void]
+  def prepare_materials(operations:)
+    rnase_warning
+    safety_warning
+    build_template_compositions(operations: operations)
+    retrieve_by_compositions(operations: operations)
+  end
+
   # Provides instructions and handling for addition of control
   # samples.  Returns all inputs that are NOT control inputs
   #
-  # @param operation_inputs [Array<item>]
-  # @param collection [Collection]
-  # @param layout_generator [LayoutGenerator]
-  # @param volume [{aty: int, unit: string}]
+  # @param compositions [Array<PCRCompostion>]
+  # @param microtiter_plate [MicrotiterPlate]
+  # @param operation_parameters [Hash]
   # @return operation_inputs [Array<item>]
-  def add_control_samples(operation_inputs:, microtiter_plate:,
-                          volume:, operation_parameters:)
-    %w[negative_template positive_template].each do |stub|
+  def add_control_samples(compositions:, microtiter_plate:,
+                          operation_parameters:)
+    remaining_compositions = []
+    CONTROL_TYPE_STUBS.each do |stub|
       name = operation_parameters["#{stub}_control".to_sym]
       loc = operation_parameters["#{stub}_location".to_sym]
 
       next unless name.present? && loc.present?
 
-      control_inputs, operation_inputs = operation_inputs.partition do |fv|
-        fv.sample.name == name
+      compositions, remaining_compositions = compositions.partition do |c|
+        c.template.sample.name == name
       end
 
       add_samples(
-        operation_inputs: control_inputs,
+        compositions: compositions,
         microtiter_plate: microtiter_plate,
-        volume: volume,
         column: loc[1]
       )
 
@@ -139,21 +136,17 @@ class Protocol
 
       seal_plate(collection, rc_list: get_rna_samples(collection))
     end
-    operation_inputs
+    remaining_compositions
   end
 
   # Provides instructions to add diagnostic samples to collection
   #
-  # @param operation_inputs [Array<items>]
-  # @param collection [Collection]
-  # @param layout_generator [LayoutGenerator]
-  # @param volume [{aty: int, unit: string}]
-  def add_diagnostic_samples(operation_inputs:, microtiter_plate:,
-                            volume:)
+  # @param compositions [Array<PCRCompostion>]
+  # @param microtiter_plate [MicrotiterPlate]
+  def add_diagnostic_samples(compositions:, microtiter_plate:)
     add_samples(
-      operation_inputs: operation_inputs,
-      microtiter_plate: microtiter_plate,
-      volume: volume
+      compositions: compositions,
+      microtiter_plate: microtiter_plate
     )
   end
 

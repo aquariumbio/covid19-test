@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
-needs 'PCR Libs/PCRComposition'
 needs 'Microtiter Plates/MicrotiterPlates'
 
 # Protocol for setting up a master mix plate for RT-qPCR
@@ -80,7 +79,7 @@ class Protocol
   # @return [void]
   def prepare_materials(operations:)
     show_prepare_workspace
-    build_template_compositions(operations: operations)
+    build_ntc_compositions(operations: operations)
     retrieve_by_compositions(operations: operations)
   end
 

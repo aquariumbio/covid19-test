@@ -11,6 +11,7 @@ needs 'Collection Management/CollectionDisplay'
 needs 'Collection Management/CollectionTransfer'
 needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRCompositions'
 
 # Module for elements that are common throughout Diagnostic RT qPCR
 #
@@ -32,6 +33,7 @@ module DiagnosticRTqPCRHelper
   # Diagnostic RT-qPCR
   include DataAssociationKeys
   include DiagnosticRTqPCRDebug
+  include DiagnosticRTqPCRCompositions
 
   WATER = 'Molecular Grade Water'
   WATER_OBJECT_TYPE = 'Reagent Aliquot'
@@ -67,30 +69,33 @@ module DiagnosticRTqPCRHelper
     end
   end
 
-  # TODO: Think about how to switch this to row-wise addition.
   # Adds samples to to collections, provides instructions to tech
   #
-  # @param operation_inputs [Array<items>]
-  # @param collection [Collection]
-  # @param layout_generator [LayoutGenerator]
-  # @param volume [{aty: int, unit: string}]
+  # @param compositions [Array<PCRCompostion>]
+  # @param microtiter_plate [MicrotiterPlate]
   # @param column [int]
-  def add_samples(operation_inputs:, microtiter_plate:,
-                  volume:, column: nil)
-    operation_inputs.each do |fv|
-      item = fv.item
-      layout_group = microtiter_plate.associate_next_empty_group(
+  def add_samples(compositions:, microtiter_plate:, column: nil)
+    compositions.each do |composition|
+      layout_group = microtiter_plate.next_empty_group(
         key: TEMPLATE_KEY,
-        data: { item: item.id, volume: volume },
         column: column
       )
 
-      association_map = []
-      layout_group.each { |r, c| association_map.push({ to_loc: [r, c] }) }
-      single_channel_item_to_collection(to_collection: microtiter_plate.collection,
-                                        source: item,
-                                        volume: volume,
-                                        association_map: association_map)
+      # inspect 'Skipping method single_channel_item_to_collection'
+      single_channel_item_to_collection(
+        to_collection: microtiter_plate.collection,
+        source: composition.template.item,
+        volume: composition.template.volume_hash,
+        association_map: layout_group.map { |r, c| { to_loc: [r, c] } }
+      )
+
+      composition.template.added = true
+
+      microtiter_plate.associate_provenance_group(
+        group: layout_group,
+        key: TEMPLATE_KEY,
+        data: added_component_data(composition: composition)
+      )
     end
   end
 
@@ -106,7 +111,7 @@ module DiagnosticRTqPCRHelper
     end
   end
 
-  ########## COMPOSITION METHODS ##########
+  ########## ITEM METHODS ##########
 
   # Finds a master mix Item in inventory
   #
@@ -149,99 +154,7 @@ module DiagnosticRTqPCRHelper
         .first
   end
 
-  # Initialize all `PCRComposition`s for each operation
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def build_master_mix_compositions(operations:)
-    operations.each do |operation|
-      primer_mixes = operation.input_array(PRIMER_MIX).map(&:item)
-      compositions = []
-
-      primer_mixes.each do |primer_mix|
-        composition = build_master_mix_composition(
-          primer_mix: primer_mix,
-          program_name: operation.temporary[:options][:program_name]
-        )
-        compositions.append(composition)
-      end
-
-      operation.temporary[:compositions] = compositions
-    end
-  end
-
-  # Initialize a `PCRComposition` for a given primer mix and program
-  #
-  # @param primer_mix [Item]
-  # @param program_name [String]
-  # @return [PCRComposition]
-  def build_master_mix_composition(primer_mix:, program_name:)
-    composition = PCRCompositionFactory.build(program_name: program_name)
-    mm_item = master_mix_item(sample: composition.master_mix.sample)
-    composition.master_mix.item = mm_item
-    composition.primer_probe_mix.item = primer_mix
-    composition.water.item = water_item
-    composition
-  end
-
-  # Initialize all `PCRComposition`s for each operation
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def build_template_compositions(operations:)
-    operations.each do |operation|
-      composition = build_template_composition(
-        program_name: operation.temporary[:options][:program_name]
-      )
-      operation.temporary[:compositions] = [composition]
-    end
-  end
-
-  # Initialize a `PCRComposition` for the given program
-  #
-  # @param program_name [String]
-  # @return [PCRComposition]
-  def build_template_composition(program_name:)
-    composition = PCRCompositionFactory.build(program_name: program_name)
-    composition.template.item = no_template_control_item
-    composition
-  end
-
-  # Retrieve `Item`s required for the protocol based on what's in
-  #   the compositions that are attached to the operations
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def retrieve_by_compositions(operations:)
-    compositions = operations.map { |op| op.temporary[:compositions] }.flatten
-    items = compositions.map(&:items).flatten.compact.uniq
-    items = items.sort_by(&:object_type_id)
-    take(items, interactive: true)
-  end
-
-  # Build the data structure that documents the provenance of a
-  #   master mix
-  #
-  # @param primer_mix [Item]
-  # @param composition [PCRComposition]
-  # @return [Hash] a data structure that documents the provenance of a
-  #   master mix
-  def added_component_data(composition:)
-    composition.added_components.map { |component| collect_data(component) }
-  end
-
-  # Reduce a `ReactionComponent` (part of a `PCRComposition`) to a simplified
-  #   Hash of selected attributes
-  #
-  # @param component [ReactionComponent]
-  # @return [Hash]
-  def collect_data(component)
-    {
-      name: component.input_name,
-      item: component.item,
-      volume: component.volume_hash
-    }
-  end
+  ########## PROVENANCE METHODS ##########
 
   # Add provenance metadata to a stock item and aliquots made from that stock
   #

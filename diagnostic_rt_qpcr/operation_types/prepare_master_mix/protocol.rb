@@ -3,7 +3,6 @@
 
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Microtiter Plates/MicrotiterPlates'
-needs 'PCR Libs/PCRComposition'
 
 # Protocol for setting up a master mix plate for RT-qPCR
 # @note Instructions adapted from the CDC COVID-19 detection protocol
