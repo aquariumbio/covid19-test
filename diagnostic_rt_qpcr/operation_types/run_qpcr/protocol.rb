@@ -45,7 +45,7 @@ class Protocol
   #
   def default_operation_params
     {
-      thermocycler_model: 'BioRad CFX96' # TestThermocycler::MODEL,
+      thermocycler_model: TestThermocycler::MODEL,
     }
   end
 
