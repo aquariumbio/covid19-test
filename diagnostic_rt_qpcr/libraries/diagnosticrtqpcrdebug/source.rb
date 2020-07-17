@@ -2,12 +2,10 @@
 # frozen_string_literal: true
 
 needs 'Collection Management/CollectionTransfer'
-# needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
 module DiagnosticRTqPCRDebug
   include CollectionTransfer
-  # include DiagnosticRTqPCRHelper
   include DataAssociationKeys
 
   VERBOSE = false
@@ -41,7 +39,6 @@ module DiagnosticRTqPCRDebug
   # @param method [String]
   # @return [void]
   def setup_test_plate(collection:, method:)
-    verbose = false
     collection.associate(:program_name, debug_parameters[:program_name])
     collection.associate(:group_size, debug_parameters[:group_size])
     qpcr_reaction = Sample.find_by_name('Test qPCR Reaction')
@@ -63,8 +60,8 @@ module DiagnosticRTqPCRDebug
     end
 
     if method == :master_mix
-      show_result(collection: collection) if verbose
-      inspect_data_associations(collection: collection) if verbose
+      show_result(collection: collection) if VERBOSE
+      inspect_data_associations(collection: collection) if VERBOSE
       return
     end
 
@@ -78,8 +75,8 @@ module DiagnosticRTqPCRDebug
       part.associate(TEMPLATE_KEY, 'added')
     end
 
-    show_result(collection: collection) if verbose
-    inspect_data_associations(collection: collection) if verbose
+    show_result(collection: collection) if VERBOSE
+    inspect_data_associations(collection: collection) if VERBOSE
   end
 
   # Show all the non-empty wells of the test plate
