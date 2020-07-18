@@ -1,14 +1,20 @@
 {
-  "id": 9,
-  "name": "Run qPCR",
+  "id": 10,
+  "name": "RehydratePatientSample",
   "parent_class": "OperationType",
-  "category": "Diagnostic RT-qPCR",
+  "category": "Modified CDC Protocol",
   "inputs": [
     {
-      "name": "qPCR Reactions",
+      "name": "Template",
+      "part": false,
+      "array": true,
+      "routing": "S"
+    },
+    {
+      "name": "Media",
       "part": false,
       "array": false,
-      "routing": "P"
+      "routing": "M"
     },
     {
       "name": "Options",
@@ -19,10 +25,10 @@
   ],
   "outputs": [
     {
-      "name": "qPCR Reactions",
+      "name": "Template",
       "part": false,
-      "array": false,
-      "routing": "P"
+      "array": true,
+      "routing": "S"
     }
   ],
   "on_the_fly": false,
