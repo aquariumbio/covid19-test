@@ -92,7 +92,7 @@ class Protocol
                                   media: media,
                                   volume: operation_params[:media_volume_qty],
                                   rc_list: sample_rack.find_multiple(item_list))
-      vortex_samples(sample_rack: sample_rack,
+      show_vortex_samples(sample_rack: sample_rack,
                      rc_list: sample_rack.find_multiple(item_list))
     end
     operations.store
@@ -103,7 +103,7 @@ class Protocol
   # Directions to vortex samples
   # @param sample_rack [SampleRack]
   # @param rc_list [Array<[r,c]>] list of all locations that need media
-  def vortex_samples(sample_rack:, rc_list: nil)
+  def show_vortex_samples(sample_rack:, rc_list: nil)
     rc_list = sample_rack.get_non_empty if rc_list.nil?
 
     show do
