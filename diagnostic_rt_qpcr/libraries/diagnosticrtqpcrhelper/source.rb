@@ -10,6 +10,8 @@ needs 'Collection Management/CollectionActions'
 needs 'Collection Management/CollectionDisplay'
 needs 'Collection Management/CollectionTransfer'
 needs 'Diagnostic RT-qPCR/DataAssociationKeys'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRCompositions'
 
 # Module for elements that are common throughout Diagnostic RT qPCR
 #
@@ -30,6 +32,8 @@ module DiagnosticRTqPCRHelper
 
   # Diagnostic RT-qPCR
   include DataAssociationKeys
+  include DiagnosticRTqPCRDebug
+  include DiagnosticRTqPCRCompositions
 
   WATER = 'Molecular Grade Water'
   WATER_OBJECT_TYPE = 'Reagent Aliquot'
@@ -37,6 +41,7 @@ module DiagnosticRTqPCRHelper
   PLATE_OBJECT_TYPE = '96-well qPCR Plate'
   PRIMER_MIX = 'Primer/Probe Mix'
   MASTER_MIX_OBJECT_TYPE = 'qPCR Master Mix Stock'
+  SPECIMEN = 'Specimen'
 
   RNA_FREE_WORKSPACE = 'reagent set-up room'
 
@@ -64,30 +69,33 @@ module DiagnosticRTqPCRHelper
     end
   end
 
-  # TODO: Think about how to switch this to row-wise addition.
   # Adds samples to to collections, provides instructions to tech
   #
-  # @param operation_inputs [Array<items>]
-  # @param collection [Collection]
-  # @param layout_generator [LayoutGenerator]
-  # @param volume [{aty: int, unit: string}]
+  # @param compositions [Array<PCRCompostion>]
+  # @param microtiter_plate [MicrotiterPlate]
   # @param column [int]
-  def add_samples(operation_inputs:, microtiter_plate:,
-                  volume:, column: nil)
-    operation_inputs.each do |fv|
-      item = fv.item
-      layout_group = microtiter_plate.associate_next_empty_group(
+  def add_samples(compositions:, microtiter_plate:, column: nil)
+    compositions.each do |composition|
+      layout_group = microtiter_plate.next_empty_group(
         key: TEMPLATE_KEY,
-        data: { item: item.id, volume: volume },
         column: column
       )
 
-      association_map = []
-      layout_group.each { |r, c| association_map.push({ to_loc: [r, c] }) }
-      single_channel_item_to_collection(to_collection: microtiter_plate.collection,
-                                        source: item,
-                                        volume: volume,
-                                        association_map: association_map)
+      # inspect 'Skipping method single_channel_item_to_collection'
+      single_channel_item_to_collection(
+        to_collection: microtiter_plate.collection,
+        source: composition.template.item,
+        volume: composition.template.volume_hash,
+        association_map: layout_group.map { |r, c| { to_loc: [r, c] } }
+      )
+
+      composition.template.added = true
+
+      microtiter_plate.associate_provenance_group(
+        group: layout_group,
+        key: TEMPLATE_KEY,
+        data: added_component_data(composition: composition)
+      )
     end
   end
 
@@ -103,7 +111,7 @@ module DiagnosticRTqPCRHelper
     end
   end
 
-  ########## COMPOSITION METHODS ##########
+  ########## ITEM METHODS ##########
 
   # Finds a master mix Item in inventory
   #
@@ -146,39 +154,36 @@ module DiagnosticRTqPCRHelper
         .first
   end
 
-  # Retrieve `Item`s required for the protocol based on what's in
-  #   the compositions that are attached to the operations
+  ########## PROVENANCE METHODS ##########
+
+  # Add provenance metadata to a stock item and aliquots made from that stock
   #
-  # @param operations [OperationList]
+  # @param stock_item [Item] the source item for the aliquot operation
+  # @param aliquot_items [Array<Item>] the aliqouts made in the operation
   # @return [void]
-  def retrieve_by_compositions(operations:)
-    compositions = operations.map { |op| op.temporary[:compositions] }.flatten
-    items = compositions.map(&:items).flatten.compact.uniq
-    items = items.sort_by(&:object_type_id)
-    take(items, interactive: true)
+  def add_aliquot_provenance(stock_item:, aliquot_items:)
+    from_map = AssociationMap.new(stock_item)
+    to_maps = aliquot_items.map { |a| [a, AssociationMap.new(a)] }
+
+    to_maps.each do |aliquot_item, to_map|
+      add_provenance(
+        from: stock_item, from_map: from_map,
+        to: aliquot_item, to_map: to_map
+      )
+      from_map.save
+      to_map.save
+    end
   end
 
-  # Build the data structure that documents the provenance of a
-  #   master mix
-  #
-  # @param primer_mix [Item]
-  # @param composition [PCRComposition]
-  # @return [Hash] a data structure that documents the provenance of a
-  #   master mix
-  def added_component_data(composition:)
-    composition.added_components.map { |component| serialize(component) }
-  end
+  def add_one_to_one_provenance(from_item:, to_item:)
+    from_map = AssociationMap.new(from_item)
+    to_map = AssociationMap.new(to_item)
 
-  # Reduce a `ReactionComponent` (part of a `PCRComposition`) to a simplified
-  #   serialized representation that is compatible with `PartProvenance`
-  #
-  # @param component [ReactionComponent]
-  # @return [Hash]
-  def serialize(component)
-    {
-      name: component.input_name,
-      id: component.item.id,
-      volume: component.volume_hash
-    }
+    add_provenance(
+      from: from_item, from_map: from_map,
+      to: to_item, to_map: to_map
+    )
+    from_map.save
+    to_map.save
   end
 end

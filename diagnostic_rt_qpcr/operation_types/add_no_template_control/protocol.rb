@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
-needs 'PCR Libs/PCRComposition'
 needs 'Microtiter Plates/MicrotiterPlates'
 
 # Protocol for setting up a master mix plate for RT-qPCR
@@ -51,7 +50,7 @@ class Protocol
   ########## MAIN ##########
 
   def main
-    setup_test_plates(operations: operations) if debug
+    setup_test_plates(operations: operations, method: :master_mix) if debug
 
     @job_params = update_all_params(
       operations: operations,
@@ -80,31 +79,8 @@ class Protocol
   # @return [void]
   def prepare_materials(operations:)
     show_prepare_workspace
-    build_compositions(operations: operations)
+    build_ntc_compositions(operations: operations)
     retrieve_by_compositions(operations: operations)
-  end
-
-  # Initialize all `PCRComposition`s for each operation
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def build_compositions(operations:)
-    operations.each do |operation|
-      composition = build_composition(
-        program_name: operation.temporary[:options][:program_name]
-      )
-      operation.temporary[:compositions] = [composition]
-    end
-  end
-
-  # Initialize a `PCRComposition` for the given program
-  #
-  # @param program_name [String]
-  # @return [PCRComposition]
-  def build_composition(program_name:)
-    composition = PCRCompositionFactory.build(program_name: program_name)
-    composition.template.item = no_template_control_item
-    composition
   end
 
   # Add the no template controls to an Operation's putput collection
@@ -138,7 +114,7 @@ class Protocol
 
     composition.template.added = true
 
-    microtiter_plate.associate_group(
+    microtiter_plate.associate_provenance_group(
       group: layout_group,
       key: TEMPLATE_KEY,
       data: added_component_data(composition: composition)
@@ -161,69 +137,6 @@ class Protocol
       note "Pipet #{volume} of #{WATER} into the indicated wells of" \
         " plate #{collection}"
       table highlight_collection_rc(collection, layout_group, check: true)
-    end
-  end
-
-  ########## DEBUG METHODS ##########
-
-  # Populate all input plates with qPCR Reactions
-  #
-  # @param operations [OperationList]
-  # @return [void]
-  def setup_test_plates(operations:)
-    operations.each do |op|
-      setup_test_plate(collection: op.input(PLATE).collection)
-    end
-  end
-
-  # Populate a collection with qPCR Reactions
-  #
-  # @param collection [Collection]
-  # @return [void]
-  def setup_test_plate(collection:)
-    qpcr_reaction = Sample.find_by_name('Test qPCR Reaction')
-
-    layout_generator = PlateLayoutGeneratorFactory.build(
-      group_size: 24,
-      method: :cdc_primer_layout
-    )
-
-    loop do
-      layout_group = layout_generator.next_group
-      break unless layout_group.present?
-
-      layout_group.each do |r, c|
-        collection.set(r, c, qpcr_reaction)
-        part = collection.part(r, c)
-        part.associate(MASTER_MIX_KEY, { foo: 'bar' })
-      end
-    end
-
-    show_result(collection: collection)
-    inspect_data_associations(collection: collection)
-  end
-
-  # Show all the non-empty wells of the test plate
-  # @todo figure out what you really want to show here
-  #
-  # @param collection [Collection]
-  # @return [void]
-  def show_result(collection:)
-    show do
-      title 'Test Plate Setup'
-      table highlight_non_empty(collection)
-    end
-  end
-
-  # Inspect a subset of the parts and their data associations
-  #
-  # @param collection [Collection]
-  # @return [void]
-  def inspect_data_associations(collection:)
-    [[0, 0], [0, 3], [0, 8]].each do |r, c|
-      part = collection.part(r, c)
-      inspect part, "part at #{[r, c]}"
-      inspect part.associations, "data at #{[r, c]}"
     end
   end
 end

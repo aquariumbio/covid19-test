@@ -136,32 +136,39 @@ class Protocol
   # Make 5 aliquots for each primer
   # @param operations [OperationList] Array of operations grouped by primer
   def make_aliquots(ops:, primer:)
-    last_tube_id = '' # keep one of each primer
+    # last_tube_id = '' # keep one of each primer
     ops.each do |op|
-      input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer.id)
-      aliquot_tubes = op.outputs.map { |output| output.item.id }
-      transfer_table = Table.new
-                            .add_column('Primer Mix ID', input_primers)
-                            .add_column('Destination Tube ID', aliquot_tubes)
+      input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer)
+      aliquot_items = op.outputs.map(&:item)
+      table = Table.new
+                   .add_column('Primer Mix ID', input_primers.map(&:to_s))
+                   .add_column('Destination Tube ID', aliquot_items.map(&:to_s))
 
       show do
         title 'Make Aliquots'
         check 'Label destination tube IDs according to the table.'
         check "Mix solution gently and aliquot #{qty_display(VOL_SUSPENSION)} \
               of rehydrated primer into each tube according to the table."
-        table transfer_table
+        table table
       end
 
-      primer.mark_as_deleted # discard the input
-      last_tube_id = aliquot_tubes[-1]
+      add_aliquot_provenance(stock_item: primer, aliquot_items: aliquot_items)
+
+      primer.mark_as_deleted
+
+      if debug
+        aliquot = aliquot_items.last
+        inspect(primer.associations, primer.id)
+        inspect(aliquot.associations, aliquot.id)
+      end
     end
 
     # One aliquot of each primer mix should be stored in the cold room instead
     # of freezer. However, this code doesn't actually work as one ObjectType
     # can only be associated with one location.
     # Leaving this here for completeness.
-    last_tube = Item.find(last_tube_id)
-    last_tube.move(COLD_ROOM)
-    last_tube.store
+    # last_tube = Item.find(last_tube_id)
+    # last_tube.move(COLD_ROOM)
+    # last_tube.store
   end
 end
