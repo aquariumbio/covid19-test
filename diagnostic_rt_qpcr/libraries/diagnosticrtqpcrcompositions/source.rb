@@ -7,8 +7,46 @@ needs 'PCR Libs/PCRComposition'
 #
 # @author Devin Strickland <strcklnd@uw.edu>
 module DiagnosticRTqPCRCompositions
-  PRIMER_MIX = 'Primer/Probe Mix'
+  PRIMER_PROBE_MIX = 'Primer/Probe Mix' # Should converge with PRIMER_PROBE_MIX
+      # in PCRCOmpositionDefinitions
   TEMPLATE = 'Template'
+
+  # Initialize all `PCRComposition`s for each operation stripwell
+  #
+  # @param operations [OperationList]
+  # @return [void]
+  def build_stripwell_master_mix_compositions(operations:)
+    operations.each do |op|
+      primer_mixes = []
+      op.input_array(PRIMER_PROBE_MIX).each do |fv|
+        primer_mixes += fv.collection.parts
+      end
+
+      compositions = []
+
+      primer_mixes.each do |primer_mix|
+        composition = build_modified_master_mix_composition(
+          primer_mix: primer_mix,
+          program_name: op.temporary[:options][:program_name]
+        )
+        compositions.append(composition)
+      end
+
+      op.temporary[:compositions] = compositions
+    end
+  end
+
+  # Initialize a `PCRComposition` for a given primer mix and program
+  # stripwell
+  #
+  # @param primer_mix [Item]
+  # @param program_name [String]
+  # @return [PCRComposition]
+  def build_modified_master_mix_composition(primer_mix:, program_name:)
+    composition = PCRCompositionFactory.build(program_name: program_name)
+    composition.primer_probe_mix.item = primer_mix
+    composition
+  end
 
   # Initialize all `PCRComposition`s for each operation
   #
@@ -16,7 +54,8 @@ module DiagnosticRTqPCRCompositions
   # @return [void]
   def build_master_mix_compositions(operations:)
     operations.each do |operation|
-      primer_mixes = operation.input_array(PRIMER_MIX).map(&:item)
+      primer_mixes = operation.input_array(PRIMER_PROBE_MIX).map(&:item)
+
       compositions = []
 
       primer_mixes.each do |primer_mix|
