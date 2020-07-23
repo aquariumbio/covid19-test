@@ -8,7 +8,8 @@ module DataAssociationKeys
   PRIMER_PROBE_MIX_KEY = 'primer_probe_mix'
   TEMPLATE_KEY = 'template'
   SAMPLE_GROUP_SIZE_KEY = 'sample_group_size'
-  SAMPLE_METHOD_KEY = 'sample_method'
-  RAW_QPCR_DATA_KEY = 'raw_qpcr_data'
-  PRIMER_METHOD_KEY = 'primer_method'
+  SAMPLE_METHOD_KEY = 'sample_method_key'
+  RAW_QPCR_DATA_KEY = 'RAW qPCR File'
+  PRIMER_METHOD_KEY = 'layout_method_key'
+  LOT_NUM_KEY = 'Lot Number'
 end

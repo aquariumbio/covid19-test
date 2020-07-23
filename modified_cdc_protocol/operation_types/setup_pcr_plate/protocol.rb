@@ -7,39 +7,31 @@ needs 'Standard Libs/Pipettors'
 needs 'Standard Libs/Units'
 needs 'Standard Libs/AssociationManagement'
 needs 'Standard Libs/LabwareNames'
-
 needs 'Collection Management/CollectionActions'
-
 needs 'Microtiter Plates/MicrotiterPlates'
-
 needs 'Microtiter Plates/PlateLayoutGenerator'
-
 needs 'PCR Libs/PCRComposition'
-
 needs 'Modified CDC Protocol/SetupPCRPlateDebug'
-
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
+needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
-PLATE = 'PCR Plate'
-LOT_NUM_KEY = 'Lot Number'
-
+# TODO Will alternate all primer probe sample types.
+# does not keep to rigid structure (e.g working down RP, N1, N2)
+# The order depends on the order that stripwells are listed in the
+# input array.
 
 class Protocol
-  # Standard Libs
   include PlanParams
   include Debug
   include Pipettors
   include Units
   include LabwareNames
   include AssociationManagement
-
   include SetupPCRPlateDebug
-
   include CollectionActions
-
   include MicrotiterPlates
-
   include DiagnosticRTqPCRHelper
+  include DataAssociationKeys
 
   RP_COMPOSITION_KEY = 'rp_composition'.to_sym
   N1_COMPOSITION_KEY = 'n1_composition'.to_sym
@@ -48,8 +40,8 @@ class Protocol
   def default_operation_params
     {
       program_name: 'Modified_CDC',
-      layout_method: 'modified_primer_layout_two',
-      group_size: 8 #not needed for the modified CDC protocol
+      layout_method: 'modified_primer_layout',
+      group_size: 8
     }
   end
 
@@ -59,18 +51,12 @@ class Protocol
   end
 
   def main
-    debug_method = setup_test(operations) if debug
+    setup_test(operations) if debug
     @job_params = update_all_params(
       operations: operations,
       default_job_params: default_job_params,
       default_operation_params: default_operation_params
     )
-    if debug
-      operations.each do |op|
-        op.temporary[:options][:layout_method] = debug_method
-      end
-    end
-
 
     provision_plates(
       operations: operations
@@ -80,63 +66,15 @@ class Protocol
 
     record_lot_numbers(operations: operations)
 
-    prepare_materials(operations: operations)
+    show_prepare_workspace
 
-    sort_compositions(operations: operations)
+    build_stripwell_master_mix_compositions(operations: operations)
 
-    assemble_master_mix_plates(operations: operations)
+    assemble_primer_probe_plates(operations: operations)
 
     operations.store
 
     {}
-  end
-
-  #======= provision plates =======#
-
-  # Creates and assigns an output collection for each operation, and fills it
-  #   with the output sample according to the provided PlateLayoutGenerator
-  #   method
-  # @note In debug mode, displays the matrix of each collection
-  #
-  # @param operations [OperationList]
-  # @param object_type [String] the ObjectType of the collection to be made
-  # @return [void]
-  def provision_plates(operations:)
-    operations.each do |op|
-      collection = op.output(PLATE).make_collection
-      get_and_label_new_plate(collection)
-
-      set_parts(
-        collection: collection,
-        method: op.temporary[:options][:layout_method],
-        sample: op.output(PLATE).sample
-      )
-
-      inspect op.output(PLATE).collection.matrix if debug
-    end
-  end
-
-  # Fills a collection with the provided sample according to the provided
-  #   PlateLayoutGenerator method
-  #
-  # @param collection [Collection]
-  # @param group_size [Fixnum]
-  # @param method [String] a PlateLayoutGenerator method
-  # @param sample [Sample] the Sample to add to the collection
-  # @return [void]
-  def set_parts(collection:, method:, sample:)
-    layout_generator = PlateLayoutGeneratorFactory.build(
-      group_size: 3, # arbitrary since modified methods don't use group size
-      method: method,
-      dimensions: collection.dimensions
-    )
-
-    loop do
-      index = layout_generator.next
-      break unless index.present?
-
-      collection.set(index[0], index[1], sample)
-    end
   end
 
   #======== record lot numbers ======#
@@ -157,9 +95,9 @@ class Protocol
     responses = show do
       title 'Record Primer Probe Lot Number'
       note 'Please add the primer probe lot number below'
-      stripwell_list.each do |strip_well|
+      stripwell_list.each do |stripwell|
         get('number',
-            var: "#{LOT_NUM_KEY}#{strip_well.id}",
+            var: "#{LOT_NUM_KEY}#{stripwell.id}",
             label: 'Lot Number',
             default: 0)
       end
@@ -173,64 +111,11 @@ class Protocol
   # @param stripwell_list [Array<collection>]
   # @param responses [Array<strings>]
   def associate_lot_numbers(stripwell_list, responses)
-    stripwell_list.each do |strip_well|
-      lot_number = responses.get_response("#{LOT_NUM_KEY}#{strip_well.id}")
-      strip_well.associate(LOT_NUM_KEY, lot_number)
+    stripwell_list.each do |stripwell|
+      lot_number = responses.get_response("#{LOT_NUM_KEY}#{stripwell.id}")
+      stripwell.associate(LOT_NUM_KEY, lot_number)
     end
   end
-
-  #===== sort compositions =====#
-
-  # Sorts the compositions into groups based on their name
-  # needed to make sure that the correct primer/probe set is added in
-  # the right row
-  #
-  # @param operation [OperationList]
-  def sort_compositions(operations: operations)
-    operations.each { |op| sort_rp_n1_n2_compositions(operation: op) }
-  end
-  
-  # Sorts the compositions into groups based on their name
-  # needed to make sure that the correct primer/probe set is added in
-  # the right row
-  #
-  # @param operation [Array<Compositions>]
-  def sort_rp_n1_n2_compositions(operation:)
-    compositions = operation.temporary[:compositions]
-    rp = []
-    n1 = []
-    n2 = []
-    compositions.each_with_index do |composition, idx|
-      name = composition.primer_probe_mix.item.sample.name.downcase
-      case
-      when name.include?('rp')
-        rp.push(composition)
-      when name.include?('n1')
-        n1.push(composition)
-      when name.include?('n2')
-        n2.push(composition)
-      end
-    end
-    operation.temporary[RP_COMPOSITION_KEY] = rp
-    operation.temporary[N1_COMPOSITION_KEY] = n1
-    operation.temporary[N2_COMPOSITION_KEY] = n2
-  end
-
-
-
-  #====== prepare materials ======#
-
-  # Prepare workspace and materials
-  #
-  # @todo Make this handle master mix or enzyme with separate
-  #   buffer dynamically
-  # @param operations [OperationList]
-  # @return [void]
-  def prepare_materials(operations:)
-    show_prepare_workspace
-    build_stripwell_master_mix_compositions(operations: operations)
-  end
-  
 
   #====== assemble primer_probe plates ======#
 
@@ -259,86 +144,29 @@ class Protocol
       group_size: group_size,
       method: method
     )
-    get_composition_keys(method).each do |composition_key|
-      compositions = operation.temporary[composition_key]
-      add_stripwells(
-        compositions: compositions,
-        microtiter_plate: microtiter_plate)
-    end
+    add_compositions(compositions: operation.temporary[:compositions],
+                   microtiter_plate: microtiter_plate)
   end
 
   # Adds list of stripwells to microtiter plate
   #
   # @param compositions [Array<Composition>]
   # @param microtiter_plate [MicrotiterPlate]
-  def add_stripwells(compositions:, microtiter_plate:)
+  def add_compositions(compositions:, microtiter_plate:)
     stripwell_groups = compositions.group_by do |comp| 
-      comp.primer_probe_mix.item.containing_collection
+      Collection.find(comp.primer_probe_mix.item.containing_collection.id)
     end
-    stripwell_groups.each do |composition_group|
-      stripwell = Collection.find(stripwell.id) # TODO need to cast to collection
-      add_stripwell(composition_group: composition_group,
-                    microtiter_plate: microtiter_plate)
-    end
-  end
 
-  # Adds a stripwell to a microtiter plate
-  #
-  # @param composition_group [Array<Compositions>] list of compositions that are
-  #    all contained in the same stipwell
-  # @param microtiter_plate [MicrotiterPlate]
-  def add_stripwell(composition_group:, microtiter_plate:)
-    layout_group = microtiter_plate.next_empty_group(key: MASTER_MIX_KEY)
-    composition_group.zip(layout_group).each do |composition, lyt|
-      data = added_component_data(composition: composition)
-      microtiter_plate.associate_provenance(index: lyt,
-                                            key: PRIMER_PROBE_MIX_KEY,
-                                            data: data)
+    sample_groups = stripwell_groups.keys.group_by do |stripwell|
+      stripwell.parts.first.sample.name
     end
-    strpwll = composition_group.first.primer_probe_mix.item.containing_collection
-    show_add_stripwell(layout_group: layout_group,
-                       stripwell: strpwll,
-                       collection: microtiter_plate.collection)
-  end
 
-  # Show instructions to place stripwell in rack
-  # @param layout_group [Array<[r,c]>]
-  # @param stripwell [Collection]
-  # @param collection [Collection] the collection of the microtiter plate
-  def show_add_stripwell(layout_group:, stripwell:, collection:)
-    show_mark_stripwell(stripwell: stripwell)
-    show do 
-      title 'Add Stripwell to Stripwell Rack'
-      note "Please place stripwell #{stripwell.id} in"\
-        " stripwell rack #{collection.id} per table below"
-      note 'Make sure column 1 of the stripwell lines up with column 1 of the rack'
-      table highlight_collection_rc(collection, layout_group){ stripwell.id }
+    sample_groups.values.transpose.each do |stripwells|
+      stripwells.each_with_index do |stripwell, idx|
+        add_stripwell(composition_group: stripwell_groups[stripwell],
+                      microtiter_plate: microtiter_plate,
+                      stripwell: stripwell)
+      end
     end
-  end
-
-  # Directions to mark a stripwell correctly
-  #
-  # @param stripwell [Colleciton]
-  def show_mark_stripwell(stripwell:)
-    show do
-      title 'Mark Stripwell'
-      note 'Using a felt tip marker please mark'\
-        " stripwell #{stripwell.id}"
-      note "Mark one end <b>1</b> and the other <b>#{stripwell.dimensions[1]}"
-      warning 'Do NOT mark the lids of the stripwell!'
-    end
-  end
-
-  # Returns an array of keys determined from the method type
-  #
-  # @param method [string] the method used in microtiter plate
-  # @return [Array<[Symbols]>] symbols are determined from constants
-  def get_composition_keys(method)
-    if method == 'modified_primer_layout_two'
-      return [RP_COMPOSITION_KEY, N1_COMPOSITION_KEY]
-    elsif method == 'modified_primer_layout_one'
-      return [N2_COMPOSITION_KEY]
-    end
-    raise 'No valid method detected'
   end
 end
