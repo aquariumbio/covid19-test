@@ -186,4 +186,101 @@ module DiagnosticRTqPCRHelper
     from_map.save
     to_map.save
   end
+
+  ################### Provision Plate Methods ################
+
+  # Creates and assigns an output collection for each operation, and fills it
+  #   with the output sample according to the provided PlateLayoutGenerator
+  #   method
+  # @note In debug mode, displays the matrix of each collection
+  #
+  # @param operations [OperationList]
+  # @param object_type [String] the ObjectType of the collection to be made
+  # @return [void]
+  def provision_plates(operations:)
+    operations.each do |op|
+      collection = op.output(PLATE).make_collection
+      get_and_label_new_plate(collection)
+
+      set_parts(
+        collection: collection,
+        group_size: op.temporary[:options][:group_size],
+        method: op.temporary[:options][:layout_method],
+        sample: op.output(PLATE).sample
+      )
+
+      inspect op.output(PLATE).collection.matrix if debug
+    end
+  end
+
+  # Fills a collection with the provided sample according to the provided
+  #   PlateLayoutGenerator method
+  #
+  # @param collection [Collection]
+  # @param group_size [Fixnum]
+  # @param method [String] a PlateLayoutGenerator method
+  # @param sample [Sample] the Sample to add to the collection
+  # @return [void]
+  def set_parts(collection:, group_size:, method:, sample:)
+    layout_generator = PlateLayoutGeneratorFactory.build(
+      group_size: group_size,
+      method: method,
+      dimensions: collection.dimensions
+    )
+
+    loop do
+      index = layout_generator.next
+      break unless index.present?
+
+      collection.set(index[0], index[1], sample)
+    end
+  end
+
+  ############# STRIPWELL METHODS ############
+  
+  # Adds a stripwell to a microtiter plate
+  #
+  # @param composition_group [Array<Compositions>] list of compositions that are
+  #    all contained in the same stripwell
+  # @param microtiter_plate [MicrotiterPlate]
+  def add_stripwell(composition_group:, microtiter_plate:, stripwell:)
+    layout_group = microtiter_plate.next_empty_group(key: PRIMER_PROBE_MIX_KEY)
+    composition_group.zip(layout_group).each do |composition, lyt|
+      data = added_component_data(composition: composition)
+      microtiter_plate.associate_provenance(index: lyt,
+                                            key: PRIMER_PROBE_MIX_KEY,
+                                            data: data)
+    end
+    show_add_stripwell(layout_group: layout_group,
+                       stripwell: stripwell,
+                       collection: microtiter_plate.collection)
+  end
+
+  # Show instructions to place stripwell in rack
+  # @param layout_group [Array<[r,c]>]
+  # @param stripwell [Collection]
+  # @param collection [Collection] the collection of the microtiter plate
+  def show_add_stripwell(layout_group:, stripwell:, collection:)
+    show_mark_stripwell(stripwell: stripwell)
+    show do 
+      title 'Add Stripwell to Stripwell Rack'
+      note "Please place stripwell #{stripwell.id} in"\
+        " stripwell rack #{collection.id} per table below"
+      note 'Make sure column 1 of the stripwell lines up with column 1 of the rack'
+      table highlight_collection_rc(collection, layout_group){ stripwell.parts.first.sample.name }
+    end
+  end
+
+  # Directions to mark a stripwell correctly
+  #
+  # @param stripwell [Colleciton]
+  def show_mark_stripwell(stripwell:)
+    show do
+      title 'Mark Stripwell'
+      note 'Using a felt tip marker please mark'\
+        " stripwell #{stripwell.id}"
+      note "Mark one end <b>1</b> and the other <b>#{stripwell.dimensions[1]}"
+      warning 'Do NOT mark the lids of the stripwell!'
+    end
+  end
 end

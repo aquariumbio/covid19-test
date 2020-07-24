@@ -1,23 +1,17 @@
 {
-  "id": 7,
-  "name": "Prepare Master Mix",
+  "id": 20,
+  "name": "Setup PCR Plate",
   "parent_class": "OperationType",
-  "category": "Diagnostic RT-qPCR",
+  "category": "Modified CDC Protocol",
   "inputs": [
     {
       "name": "Primer/Probe Mix",
-      "part": false,
+      "part": null,
       "array": true,
-      "routing": "M"
+      "routing": "L"
     },
     {
       "name": "Options",
-      "part": false,
-      "array": false,
-      "routing": null
-    },
-    {
-      "name": "primer_group",
       "part": null,
       "array": null,
       "routing": null
@@ -26,11 +20,11 @@
   "outputs": [
     {
       "name": "PCR Plate",
-      "part": false,
-      "array": false,
+      "part": null,
+      "array": null,
       "routing": "P"
     }
   ],
-  "on_the_fly": false,
+  "on_the_fly": null,
   "user_id": 1
 }
