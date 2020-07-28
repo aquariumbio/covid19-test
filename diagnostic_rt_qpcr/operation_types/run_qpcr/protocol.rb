@@ -61,28 +61,23 @@ class Protocol
     )
     return {} if operations.errored.any?
 
-    available_thermocyclers = get_available_thermocyclers
+    paired_ops = pair_ops_and_thermocyclers(get_available_thermocyclers, operations)
 
-    remove_unavailable_operations(available_thermocyclers)
+    remove_unpaired_operations(operations)
 
-    return {} if operations.empty?
+    return {} if paired_ops.empty?
 
-    operations.retrieve.make
+    paired_ops.make
 
-    composition = PCRCompositionFactory.build(
-      program_name: @job_params[:program_name]
-    )
-    program = PCRProgramFactory.build(
-      program_name: @job_params[:program_name],
-      volume: composition.volume
-    )
+    # TODO this errors
+    # paired_ops.retrieve
 
-    running_thermocyclers = start_thermocyclers(program: program,
-                                                composition: composition)
+    running_thermocyclers = start_thermocyclers(paired_ops)
 
     get_data(running_thermocyclers: running_thermocyclers)
 
-    operations.store
+    # TODO Also errors out
+    # paired_ops.store
 
     {}
   end
@@ -97,10 +92,17 @@ class Protocol
     end
   end
 
-  def start_thermocyclers(program:, composition:)
+  def start_thermocyclers(paired_ops)
+    composition = PCRCompositionFactory.build(
+      program_name: @job_params[:program_name]
+    )
+    program = PCRProgramFactory.build(
+      program_name: @job_params[:program_name]
+    )
+
     running_thermocyclers = []
-    operations.each do |op|
-      plate = op.input(INPUT_REACTIONS).item
+    paired_ops.each do |op|
+      plate = op.input(INPUT_REACTIONS).collection
 
       file_name = experiment_filename(plate)
 
@@ -170,14 +172,16 @@ class Protocol
     Parameter.where(key: 'thermocycler').map { |thr| JSON.parse(thr.value) }
   end
 
-  def remove_unavailable_operations(available_thermocyclers)
-    ops_to_remove = find_unavailable_ops(available_thermocyclers)
-    operations.reject! { |op| ops_to_remove.include?(op) }
-    error_op_warning(ops_to_remove)
-    ops_to_remove.each do |op|
-      op.error(:unavailablethermocycler, 'No thermocyclers were available')
-      op.set_status_recursively('pending')
+  def remove_unpaired_operations(ops)
+    ops_to_remove = []
+    ops.each do |op|
+      if op.get(THERMOCYCLER_KEY).nil?
+        op.error(:unavailablethermocycler, 'No thermocyclers were available')
+        op.set_status_recursively('pending')
+        ops_to_remove.push(op)
+      end
     end
+    error_op_warning(ops_to_remove)
   end
 
   def error_op_warning(ops_to_remove)
@@ -191,21 +195,19 @@ class Protocol
     end
   end
 
-  def find_unavailable_ops(thermocyclers)
-    ops_to_remove = []
-    operations.each do |op|
-      available = false
+  def pair_ops_and_thermocyclers(thermocyclers, ops)
+    paired_ops = []
+    ops.each do |op|
       thermocyclers.each do |thermo|
         next unless thermo['model'] == op.temporary[:options][:thermocycler_model] || true
 
         op.associate(THERMOCYCLER_KEY, thermo)
         thermocyclers.delete(thermo)
-        available = true
+        paired_ops.push(op)
         break
       end
-      ops_to_remove.push(op) unless available 
     end
-    ops_to_remove
+    paired_ops.extend(OperationList)
   end
 
   class UnavailableThermocycler < ProtocolError; end
