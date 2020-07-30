@@ -118,6 +118,7 @@ module DiagnosticRTqPCRHelper
   # @param sample [Sample] of qPCR Master Mix
   # @return [Item]
   def master_mix_item(sample:)
+    inspect sample.name.to_s
     get_item(
       sample: sample,
       object_type_name: MASTER_MIX_OBJECT_TYPE
@@ -267,7 +268,7 @@ module DiagnosticRTqPCRHelper
       note "Please place stripwell #{stripwell.id} in"\
         " stripwell rack #{collection.id} per table below"
       note 'Make sure column 1 of the stripwell lines up with column 1 of the rack'
-      table highlight_collection_rc(collection, layout_group){ stripwell.parts.first.sample.name }
+      table highlight_collection_rc(collection, layout_group){ stripwell.id }
     end
   end
 

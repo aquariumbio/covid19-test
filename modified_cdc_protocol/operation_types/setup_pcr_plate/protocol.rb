@@ -33,9 +33,6 @@ class Protocol
   include DiagnosticRTqPCRHelper
   include DataAssociationKeys
 
-  RP_COMPOSITION_KEY = 'rp_composition'.to_sym
-  N1_COMPOSITION_KEY = 'n1_composition'.to_sym
-  N2_COMPOSITION_KEY = 'n2_composition'.to_sym
 
   def default_operation_params
     {
@@ -57,6 +54,7 @@ class Protocol
       default_job_params: default_job_params,
       default_operation_params: default_operation_params
     )
+    
 
     provision_plates(
       operations: operations
@@ -98,7 +96,7 @@ class Protocol
       stripwell_list.each do |stripwell|
         get('number',
             var: "#{LOT_NUM_KEY}#{stripwell.id}",
-            label: 'Lot Number',
+            label: "Stripwell #{stripwell.id} Lot Number",
             default: 0)
       end
     end

@@ -108,7 +108,7 @@ class Protocol
 
     show_add_ntc(
       collection: collection,
-      volume: composition.water.qty_display,
+      volume: composition.template.qty_display,
       layout_group: layout_group
     )
 
