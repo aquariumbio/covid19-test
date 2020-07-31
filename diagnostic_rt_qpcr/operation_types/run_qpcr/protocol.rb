@@ -7,7 +7,6 @@ needs 'Standard Libs/PlanParams'
 needs 'Standard Libs/Debug'
 needs 'Standard Libs/UploadHelper'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
-needs 'Diagnostic RT-qPCR/DataAssociationkeys'
 
 # Protocol for loading samples into a qPCR thermocycler and running it
 #
