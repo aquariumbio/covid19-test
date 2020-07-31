@@ -6,7 +6,7 @@ needs 'Thermocyclers/Thermocyclers'
 needs 'Standard Libs/PlanParams'
 needs 'Standard Libs/Debug'
 needs 'Standard Libs/UploadHelper'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
 # Protocol for loading samples into a qPCR thermocycler and running it
 #
@@ -17,9 +17,7 @@ class Protocol
   include PlanParams
   include Debug
   include UploadHelper
-  include DataAssociationKeys
-
-  INPUT_REACTIONS = 'qPCR Reactions'
+  include DiagnosticRTqPCRHelper
 
   THERMOCYCLER_KEY = 'thermocycler'.to_sym
 
@@ -88,7 +86,7 @@ class Protocol
       export_measurements(thermocycler: thermocycler)
 
       associate_measurement(file_name: op.get(RAW_QPCR_DATA_KEY),
-                            plate: op.input(INPUT_REACTIONS).collection)
+                            plate: op.input(PLATE).collection)
     end
   end
 
@@ -102,7 +100,7 @@ class Protocol
 
     running_thermocyclers = []
     paired_ops.each do |op|
-      plate = op.input(INPUT_REACTIONS).collection
+      plate = op.input(PLATE).collection
 
       file_name = experiment_filename(plate)
 
@@ -134,7 +132,7 @@ class Protocol
   end
 
   def associate_measurement(file_name:, plate:)
-    file = upload_data(file_name, 1, 4)
+    file = uploadData(file_name, 1, 4)
     plate.associate(RAW_QPCR_DATA_KEY, file)
   end
 
@@ -181,7 +179,7 @@ class Protocol
         ops_to_remove.push(op)
       end
     end
-    error_op_warning(ops_to_remove)
+    error_op_warning(ops_to_remove) unless ops_to_remove.empty?
   end
 
   def error_op_warning(ops_to_remove)
@@ -190,7 +188,7 @@ class Protocol
       note 'There are not enough available thermocyclers for this job'
       warning 'The following plates were removed from this job'
       ops_to_remove.each do |op|
-        note op.input(INPUT_REACTIONS).collection.id.to_s
+        note op.input(PLATE).collection.id.to_s
       end
     end
   end

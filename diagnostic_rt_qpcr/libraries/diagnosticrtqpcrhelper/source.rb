@@ -9,7 +9,6 @@ needs 'Standard Libs/LabwareNames'
 needs 'Collection Management/CollectionActions'
 needs 'Collection Management/CollectionDisplay'
 needs 'Collection Management/CollectionTransfer'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRCompositions'
 
@@ -267,7 +266,7 @@ module DiagnosticRTqPCRHelper
       note "Please place stripwell #{stripwell.id} in"\
         " stripwell rack #{collection.id} per table below"
       note 'Make sure column 1 of the stripwell lines up with column 1 of the rack'
-      table highlight_collection_rc(collection, layout_group){ stripwell.parts.first.sample.name }
+      table highlight_collection_rc(collection, layout_group){ stripwell.id }
     end
   end
 

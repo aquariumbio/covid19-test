@@ -34,7 +34,7 @@ class Protocol
     {
       negative_template_control: nil,
       negative_template_location: nil,
-      positive_template_control: 'Test nCoVPC',
+      positive_template_control: 'nCoVPC',
       positive_template_location: [0, 11],
       program_name: 'CDC_TaqPath_CG',
       group_size: 3,

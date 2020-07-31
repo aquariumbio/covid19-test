@@ -15,9 +15,6 @@ needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Tube Rack/TubeRack'
 needs 'Tube Rack/TubeRackHelper'
 
-needs 'Modified CDC Protocol/RehydratePatientSampleDebug'
-
-TEMPLATE = 'Template'
 MEDIA = 'Media'
 
 class Protocol
@@ -39,12 +36,9 @@ class Protocol
   #TubeRack
   include TubeRackHelper
 
-  #Modified CDC Protocol
-  include RehydratePatientSampleDebug
-
   def default_operation_params
     {
-      media_volume_microliters: 300,
+      media_volume_microliters: 1000,
     }
   end
 
@@ -54,7 +48,6 @@ class Protocol
   end
 
   def main
-    setup_test(operations)
     @job_params = update_all_params(
       operations: operations,
       default_job_params: default_job_params,
@@ -73,9 +66,9 @@ class Protocol
       operation_params = op.temporary[:options]
       add_qty_display(operation_params)
 
-      array_pass(op, TEMPLATE)
+      array_pass(op, SPECIMEN)
 
-      item_list = op.input_array(TEMPLATE).map{ |fv| fv.item }
+      item_list = op.input_array(SPECIMEN).map{ |fv| fv.item }
       media = op.input(MEDIA).item
 
       sample_rack = TubeRack.new(8, 12, name: "#{TUBE_MICROFUGE} rack")
@@ -92,7 +85,7 @@ class Protocol
                                   media: media,
                                   volume: operation_params[:media_volume_qty],
                                   rc_list: sample_rack.find_multiple(item_list))
-      show_vortex_samples(sample_rack: sample_rack,
+      vortex_samples(sample_rack: sample_rack,
                      rc_list: sample_rack.find_multiple(item_list))
     end
     operations.store
@@ -103,7 +96,7 @@ class Protocol
   # Directions to vortex samples
   # @param sample_rack [SampleRack]
   # @param rc_list [Array<[r,c]>] list of all locations that need media
-  def show_vortex_samples(sample_rack:, rc_list: nil)
+  def vortex_samples(sample_rack:, rc_list: nil)
     rc_list = sample_rack.get_non_empty if rc_list.nil?
 
     show do

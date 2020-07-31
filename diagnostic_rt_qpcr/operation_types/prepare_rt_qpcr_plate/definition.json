@@ -1,5 +1,5 @@
 {
-  "id": 4,
+  "id": 9,
   "name": "Prepare RT-qPCR Plate",
   "parent_class": "OperationType",
   "category": "Diagnostic RT-qPCR",
@@ -11,19 +11,13 @@
       "routing": "T"
     },
     {
-      "name": "Options",
-      "part": false,
-      "array": false,
-      "routing": null
-    },
-    {
       "name": "PCR Plate",
       "part": false,
       "array": false,
       "routing": "P"
     },
     {
-      "name": "Assay Type",
+      "name": "Options",
       "part": false,
       "array": false,
       "routing": null

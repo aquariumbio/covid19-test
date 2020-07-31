@@ -1,11 +1,11 @@
 {
-  "id": 10,
+  "id": 11,
   "name": "RehydratePatientSample",
   "parent_class": "OperationType",
   "category": "Modified CDC Protocol",
   "inputs": [
     {
-      "name": "Template",
+      "name": "Specimen",
       "part": false,
       "array": true,
       "routing": "S"
@@ -25,7 +25,7 @@
   ],
   "outputs": [
     {
-      "name": "Template",
+      "name": "Specimen",
       "part": false,
       "array": true,
       "routing": "S"

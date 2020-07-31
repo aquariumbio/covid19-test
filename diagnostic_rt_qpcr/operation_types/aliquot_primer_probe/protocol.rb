@@ -95,7 +95,7 @@ class Protocol
       output_primer = op.output(PRIMER_MIX).sample
       # makes 4 additional aliquots per op
       (OUTPUT_ITEMS_NUM[:qty] - 1).times do
-        new_aliquot = output_primer.make_item('Primer Mix Aliquot')
+        new_aliquot = output_primer.make_item(op.output(PRIMER_MIX).item.object_type.name)
         new_aliquot.associate :volume, VOL_SUSPENSION[:qty]
         link_output_item(operation: op, sample: output_primer, item: new_aliquot)
       end
