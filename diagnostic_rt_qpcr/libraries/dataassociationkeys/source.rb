@@ -12,5 +12,5 @@ module DataAssociationKeys
   TEMPLATE_KEY = 'template'
   RAW_QPCR_DATA_KEY = 'raw_qpcr_data'
   LOT_NUM_KEY = 'lot_number'
-  THERMOCYCLER_KEY = 'thermocycler'.to_sym
+  THERMOCYCLER_KEY = 'thermocycler'
 end

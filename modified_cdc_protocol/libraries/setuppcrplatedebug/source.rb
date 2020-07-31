@@ -1,9 +1,11 @@
 # Library code here
 
 needs 'Standard Libs/Debug'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
 module SetupPCRPlateDebug
   include Debug
+  include DiagnosticRTqPCRHelper
 
   # Sets up test for debugging
   #
@@ -12,7 +14,7 @@ module SetupPCRPlateDebug
     operations.make
     operations.each do |op|
       rows = op.output('PCR Plate').collection.dimensions[0]
-      op.set_input('Primer/Probe Mix', generate_stripwells(op.input_array('Primer/Probe Mix'), rows))
+      op.set_input('Primer/Probe Mix', generate_stripwells(op.input_array(PRIMER_MIX), rows))
     end
   end
 

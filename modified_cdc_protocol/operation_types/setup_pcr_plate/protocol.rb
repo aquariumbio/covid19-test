@@ -13,7 +13,6 @@ needs 'Microtiter Plates/PlateLayoutGenerator'
 needs 'PCR Libs/PCRComposition'
 needs 'Modified CDC Protocol/SetupPCRPlateDebug'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 
 # TODO Will alternate all primer probe sample types.
 # does not keep to rigid structure (e.g working down RP, N1, N2)

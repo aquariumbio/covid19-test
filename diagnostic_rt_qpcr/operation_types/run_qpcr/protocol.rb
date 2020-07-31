@@ -154,13 +154,13 @@ class Protocol
       note 'Please check which thermocyclers are currently available'
       thermocyclers.each_with_index do |thermo|
         select([available_key, 'unavailable'],
-               var: thermo['name'].to_sym,
+               var: thermo['name'].to_s,
                label: "Thermocycler #{thermo['name']}")
       end
     end
     available_thermo = []
     thermocyclers.map do |thermo|
-      next unless response[thermo['name'].to_sym] == available_key || debug
+      next unless response[thermo['name'].to_s] == available_key || debug
 
       available_thermo.push(thermo)
     end

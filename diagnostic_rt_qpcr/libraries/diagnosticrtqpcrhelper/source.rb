@@ -9,7 +9,6 @@ needs 'Standard Libs/LabwareNames'
 needs 'Collection Management/CollectionActions'
 needs 'Collection Management/CollectionDisplay'
 needs 'Collection Management/CollectionTransfer'
-needs 'Diagnostic RT-qPCR/DataAssociationKeys'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRCompositions'
 
@@ -118,7 +117,6 @@ module DiagnosticRTqPCRHelper
   # @param sample [Sample] of qPCR Master Mix
   # @return [Item]
   def master_mix_item(sample:)
-    inspect sample.name.to_s
     get_item(
       sample: sample,
       object_type_name: MASTER_MIX_OBJECT_TYPE
