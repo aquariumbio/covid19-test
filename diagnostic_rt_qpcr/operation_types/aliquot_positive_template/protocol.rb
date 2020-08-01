@@ -100,12 +100,13 @@ class Protocol
 
     # Declare references to output objects
     ops.each do |op|
+      out_ob_type = op.output(TEMPLATE).item.object_type.name
       op.output(TEMPLATE).item.associate :volume, VOL_SUSPENSION[:qty]
 
       output_RNA = op.output(TEMPLATE).sample
       # makes 32 additional aliquots per op
       (OUTPUT_ITEMS_NUM[:qty] - 1).times do
-        new_aliquot = output_RNA.make_item('Purified RNA in 1.5 mL tube')
+        new_aliquot = output_RNA.make_item(out_ob_type)
         new_aliquot.associate :volume, VOL_SUSPENSION[:qty]
         link_output_item(operation: op, sample: output_RNA, item: new_aliquot)
       end
