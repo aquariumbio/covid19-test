@@ -59,19 +59,26 @@ class Protocol
     # 1. Get 33 1.5 mL tube for each operation
     get_tubes(count: operations.length)
     operations.retrieve
+    water = water_item
+    take([water], interactive: true)
 
     # 2. For each Lyophilized Postive Control, resuspend in 1 mL of
     # nuclease-free waterand, aliquot 33 use aliquots (approximately
     # 30 uL) and store at less than and equal to -70C.
     save_output(ops: operations)
 
-    suspend_lyophilized_RNA
+    suspend_lyophilized_rna(water: water, vol_water: VOL_WATER)
     keep_tubes = [] # Empty array for storing single use aliquots
 
     # Group the operations by the input reagent
     ops_by_input = operations.group_by { |op| op.input(TEMPLATE).item }
     ops_by_input.each do |lyophilized_rna, ops|
-      keep_tubes.push(make_aliquots(ops: ops, lyophilized_rna: lyophilized_rna))
+      kt = make_aliquots(
+        ops: ops,
+        lyophilized_rna: lyophilized_rna,
+        water: water
+      )
+      keep_tubes.push(kt)
     end
 
     prepare_plating(keep_tubes: keep_tubes)
@@ -103,12 +110,12 @@ class Protocol
       out_ob_type = op.output(TEMPLATE).item.object_type.name
       op.output(TEMPLATE).item.associate :volume, VOL_SUSPENSION[:qty]
 
-      output_RNA = op.output(TEMPLATE).sample
+      output_rna = op.output(TEMPLATE).sample
       # makes 32 additional aliquots per op
       (OUTPUT_ITEMS_NUM[:qty] - 1).times do
-        new_aliquot = output_RNA.make_item(out_ob_type)
+        new_aliquot = output_rna.make_item(out_ob_type)
         new_aliquot.associate :volume, VOL_SUSPENSION[:qty]
-        link_output_item(operation: op, sample: output_RNA, item: new_aliquot)
+        link_output_item(operation: op, sample: output_rna, item: new_aliquot)
       end
     end
   end
@@ -132,8 +139,12 @@ class Protocol
   end
 
   # Performs the resuspension protocol for a list of operations
-  # that all use the given lyophilized_RNA input.
-  def suspend_lyophilized_RNA()
+  # that all use the given lyophilized_rna input.
+  def suspend_lyophilized_rna(water:, vol_water:)
+    show_suspend_lyophilized_rna(water: water, vol_water: vol_water)
+  end
+
+  def show_suspend_lyophilized_rna(water:, vol_water:)
     show do
       title 'Resuspend Positive Template'
       warning "This reagent should be handled with caution in a dedicated \
@@ -141,16 +152,15 @@ class Protocol
       warning "Freeze-thaw cycles should be avoided. Maintain on ice when \
       thawed."
       check "Resuspend dried Lyophilized Postive Control RNA in each tube in \
-      #{qty_display(VOL_WATER)} of nuclease-free water to achieve the \
-      proper concentration."
+      #{qty_display(vol_water)} of nuclease-free water #{water}."
     end
   end
 
   # Performs the aliquote protocol for a list of operations
-  # that all use the given lyophilized_RNA input.
-  # @param make_aliquots [Item] the lyophilized_RNA
+  # that all use the given lyophilized_rna input.
+  # @param make_aliquots [Item] the lyophilized_rna
   # @param operations     [OperationList] the list of operations
-  def make_aliquots(ops:, lyophilized_rna:)
+  def make_aliquots(ops:, lyophilized_rna:, water:)
     last_tube = nil
 
     ops.each do |op|
@@ -168,6 +178,11 @@ class Protocol
         check 'Discard the empty input tube'
         table table
       end
+
+      add_aliquot_provenance(
+        stock_item: water,
+        aliquot_items: aliquot_items
+      )
 
       add_aliquot_provenance(
         stock_item: lyophilized_rna,

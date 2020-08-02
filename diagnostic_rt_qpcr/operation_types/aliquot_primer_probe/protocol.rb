@@ -62,14 +62,20 @@ class Protocol
 
     get_tubes(count: operations.length)
     operations.retrieve
+    water = water_item
+    take([water], interactive: true)
 
     save_output(operations)
-    suspend_primer_mix
+    suspend_primer_mix(
+      water: water,
+      vol_water: VOL_WATER,
+      time_rehydrate: TIME_REHYDRATE
+    )
 
     # Group the operations by the input reagent
     ops_by_input = operations.group_by { |op| op.input(PRIMER_MIX).item }
     ops_by_input.each do |primer, ops|
-      make_aliquots(ops: ops, primer: primer)
+      make_aliquots(ops: ops, primer: primer, water: water)
     end
 
     operations.store(interactive: true, io: 'output', method: 'boxes')
@@ -119,23 +125,31 @@ class Protocol
     fv.save
   end
 
+  def suspend_primer_mix(water:, vol_water:, time_rehydrate:)
+    show_suspend_primer_mix(
+      water: water,
+      vol_water: vol_water,
+      time_rehydrate: time_rehydrate
+    )
+  end
+
   # Instructions for suspending dried reagents
-  def suspend_primer_mix
+  def show_suspend_primer_mix(water:, vol_water:, time_rehydrate:)
     show do
       title 'Suspend Primer Mix'
       warning 'These reagents should only be handled in a clean area.'
       warning 'Avoid reeze-thaw cycles. Maintain on ice when thawed.'
       check "Using aseptic technique, suspend each dried primer in \
-             #{qty_display(VOL_WATER)} of nuclease-free water."
-      check "Rehydrate for #{qty_display(TIME_REHYDRATE)} at room temperature \
+             #{qty_display(vol_water)} of nuclease-free water."
+      check "Rehydrate for #{qty_display(time_rehydrate)} at room temperature \
             in the dark."
-      timer initial: { minutes: TIME_REHYDRATE[:qty] }
+      # timer initial: { minutes: time_rehydrate[:qty] }
     end
   end
 
   # Make 5 aliquots for each primer
   # @param operations [OperationList] Array of operations grouped by primer
-  def make_aliquots(ops:, primer:)
+  def make_aliquots(ops:, primer:, water:)
     # last_tube_id = '' # keep one of each primer
     ops.each do |op|
       input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer)
@@ -152,6 +166,7 @@ class Protocol
         table table
       end
 
+      add_aliquot_provenance(stock_item: water, aliquot_items: aliquot_items)
       add_aliquot_provenance(stock_item: primer, aliquot_items: aliquot_items)
 
       primer.mark_as_deleted
