@@ -153,6 +153,16 @@ module DiagnosticRTqPCRHelper
         .first
   end
 
+  def id_ranges_display(items:)
+    range = items.map(&:id).sort
+    first = range.first
+    last = range.last
+    unless (last - first + 1) == range.length
+      raise ProtocolError, 'Nonconsecutive item IDs detected'
+    end
+    "#{first} - #{last}"
+  end
+
   ########## PROVENANCE METHODS ##########
 
   # Add provenance metadata to a stock item and aliquots made from that stock
@@ -236,7 +246,7 @@ module DiagnosticRTqPCRHelper
   end
 
   ############# STRIPWELL METHODS ############
-  
+
   # Adds a stripwell to a microtiter plate
   #
   # @param composition_group [Array<Compositions>] list of compositions that are
@@ -261,7 +271,7 @@ module DiagnosticRTqPCRHelper
   # @param collection [Collection] the collection of the microtiter plate
   def show_add_stripwell(layout_group:, stripwell:, collection:)
     show_mark_stripwell(stripwell: stripwell)
-    show do 
+    show do
       title 'Add Stripwell to Stripwell Rack'
       note "Please place stripwell #{stripwell.id} in"\
         " stripwell rack #{collection.id} per table below"

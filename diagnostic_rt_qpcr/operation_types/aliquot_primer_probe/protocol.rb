@@ -60,7 +60,6 @@ class Protocol
       default_operation_params: default_operation_params
     )
 
-    get_tubes(count: operations.length)
     operations.retrieve
     water = water_item
     take([water], interactive: true)
@@ -79,15 +78,6 @@ class Protocol
     end
 
     operations.store(interactive: true, io: 'output', method: 'boxes')
-  end
-
-  # Get 5 1.5 mL tubes per dried reagent
-  # @param count [Integer] the number of operations currently running
-  def get_tubes(count:)
-    show do
-      title "Get new #{TUBE_MICROFUGE}"
-      check "Please get #{count * OUTPUT_ITEMS_NUM[:qty]} #{TUBE_MICROFUGE}"
-    end
   end
 
   # Create and save multiple output Items per operation
@@ -136,7 +126,7 @@ class Protocol
   # Instructions for suspending dried reagents
   def show_suspend_primer_mix(water:, vol_water:, time_rehydrate:)
     show do
-      title 'Suspend Primer Mix'
+      title 'Resuspend Primer Mix'
       warning 'These reagents should only be handled in a clean area.'
       warning 'Avoid reeze-thaw cycles. Maintain on ice when thawed.'
       check "Using aseptic technique, suspend each dried primer in \
@@ -152,18 +142,18 @@ class Protocol
   def make_aliquots(ops:, primer:, water:)
     # last_tube_id = '' # keep one of each primer
     ops.each do |op|
-      input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer)
       aliquot_items = op.outputs.map(&:item)
-      table = Table.new
-                   .add_column('Primer Mix ID', input_primers.map(&:to_s))
-                   .add_column('Destination Tube ID', aliquot_items.map(&:to_s))
+      id_ranges = id_ranges_display(items: aliquot_items)
+      tubes = TUBE_MICROFUGE.pluralize(aliquot_items.length)
 
       show do
-        title 'Make Aliquots'
-        check 'Label destination tube IDs according to the table.'
+        title 'Aliquot Primer/Probe Mixes'
+
+        check "Get #{aliquot_items.length} #{tubes}."
+        check "Label the tubes #{id_ranges}"
         check "Mix solution gently and aliquot #{qty_display(VOL_SUSPENSION)} \
-              of rehydrated primer into each tube according to the table."
-        table table
+              of rehydrated primer into each of the #{tubes}."
+        check "Discard the empty primer tube #{primer}."
       end
 
       add_aliquot_provenance(stock_item: water, aliquot_items: aliquot_items)

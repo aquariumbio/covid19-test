@@ -57,7 +57,6 @@ class Protocol
     )
 
     # 1. Get 33 1.5 mL tube for each operation
-    get_tubes(count: operations.length)
     operations.retrieve
     water = water_item
     take([water], interactive: true)
@@ -87,16 +86,6 @@ class Protocol
     # experiment and hold on ice until adding to plate.
     # Discard any unused portion of the aliquot.
     operations.store(interactive: true, io: 'output', method: 'boxes')
-  end
-
-  # Get 33 1.5 mL tubes per dried positive control
-  #
-  # @param count [Integer] the number of operations
-  def get_tubes(count:)
-    show do
-      title "Get new #{TUBE_MICROFUGE}"
-      check "Please get #{count * OUTPUT_ITEMS_NUM[:qty]} #{TUBE_MICROFUGE}"
-    end
   end
 
   # Label the tubes so that the same reagents have consecutive IDs
@@ -164,19 +153,18 @@ class Protocol
     last_tube = nil
 
     ops.each do |op|
-      input_rnas = Array.new(OUTPUT_ITEMS_NUM[:qty], lyophilized_rna)
       aliquot_items = op.outputs.map(&:item)
-      table = Table.new
-                   .add_column('Lyophilized RNA', input_rnas.map(&:to_s))
-                   .add_column('Output RNA Aliquot', aliquot_items.map(&:to_s))
+      id_ranges = id_ranges_display(items: aliquot_items)
+      tubes = TUBE_MICROFUGE.pluralize(aliquot_items.length)
 
       show do
-        title 'Aliquot Single Used Aliquot Positive Template'
-        check "Make single use aliquot by transfering \
-        #{qty_display(VOL_SUSPENSION)} of the diluted postive control into \
-        individual #{TUBE_MICROFUGE} and label it with the proper item ID."
-        check 'Discard the empty input tube'
-        table table
+        title 'Aliquot Positive Template'
+
+        check "Get #{aliquot_items.length} #{tubes}."
+        check "Label the tubes #{id_ranges}"
+        check "Pipet #{qty_display(VOL_SUSPENSION)} of the resuspended postive \
+        control into each of the #{tubes}."
+        check "Discard the empty positive control tube #{lyophilized_rna}."
       end
 
       add_aliquot_provenance(
