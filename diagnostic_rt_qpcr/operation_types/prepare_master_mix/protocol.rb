@@ -183,7 +183,7 @@ class Protocol
     program_name = operation.temporary[:options][:program_name]
 
     output_collection = operation.output(PLATE).collection
-    output_collection.associate(GROUP_SIZE_KEY, group_size)
+    output_collection.associate(PRIMER_GROUP_SIZE_KEY, group_size)
     output_collection.associate(COMPOSITION_NAME_KEY, program_name)
 
     make_master_mixes(
