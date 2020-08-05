@@ -3,11 +3,6 @@
 
 needs 'PCR Libs/PCRComposition'
 
-# Not sure I like that this knows of PCRCompositionDefinitions
-#   need some place to store some inforamtion that I can access
-#   prior to creating a composition
-needs 'PCR Libs/PCRCompositionDefinitions'
-
 # Module for working with PCRCompositions used in Diagnostic RT qPCR
 #
 # @author Devin Strickland <strcklnd@uw.edu>
@@ -27,18 +22,18 @@ module DiagnosticRTqPCRCompositions
     operations.each do |op|
       options = op.temporary[:options]
       program_name = options[:program_name]
-      
+
       stripwells = find_stripwells(sample_names: options[:sample_names],
                                    stripwell_ot: options[:object_type],
                                    dimensions: op.temporary[:microtiter_plate].collection.dimensions,
                                    all_inputs: all_inputs)
-      unless stripwells.present?
+      if stripwells.any?(&:empty?)
         op.error(ProtocolError, 'No enough parts in inventory')
         next
       end
-      
+
       parts_by_row = convert_to_parts_by_row(stripwells: stripwells)
-      
+
       compositions = setup_composition_parts(parts_by_row: parts_by_row,
                                              program_name: program_name)
       op.temporary[:compositions] = compositions
@@ -51,14 +46,14 @@ module DiagnosticRTqPCRCompositions
   # if the primer probes ever start coming in as individual parts and
   # not stripwells
   def convert_to_parts_by_row(stripwells: stripwells)
-    stripwells.map { |stripwell| stripwell.parts }
+    stripwells.map(&:parts)
   end
   
   def setup_composition_parts(parts_by_row:, program_name:)
     compositions = []
     parts_by_row.each do |parts|
-      parts.each do |part|
-        compositions.push(build_primer_probe_compositions(part: part,
+      parts.each do |item|
+        compositions.push(build_primer_probe_composition(item: item,
                                         program_name: program_name))
       end
     end
@@ -71,13 +66,12 @@ module DiagnosticRTqPCRCompositions
     ordered_sample_names.each do |name|
       possible_items = Item.where(sample: Sample.find_by_name(name))
                            .to_ary
-                           .reject{ |part| part unless part.is_part}
+                           .select(&:is_part)
                            .map(&:containing_collection)
                            .uniq
-                           .reject { |col| col unless col.object_type.name == stripwell_ot }
+                           .select { |col| col.object_type.name == stripwell_ot }
                            .map(&:id)
       unused_items = (possible_items - stripwells.map(&:id)) - all_inputs.map(&:id)
-      return nil if unused_items.empty?
       stripwells.push(Collection.find(unused_items.first))
     end
     stripwells
@@ -89,9 +83,9 @@ module DiagnosticRTqPCRCompositions
   # @param primer_mix [Item]
   # @param program_name [String]
   # @return [PCRComposition]
-  def build_primer_probe_compositions(part:, program_name:)
+  def build_primer_probe_composition(item:, program_name:)
     composition = PCRCompositionFactory.build(program_name: program_name)
-    composition.primer_probe_mix.item = part
+    composition.primer_probe_mix.item = item
     composition
   end
 

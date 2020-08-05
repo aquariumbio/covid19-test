@@ -37,7 +37,7 @@ class Protocol
 
   def default_operation_params
     {
-      program_name: 'Modified_CDC_RP_N1',
+      program_name: 'Modified_CDC',
       layout_method: 'modified_primer_layout',
       group_size: 8,
       sample_names: ['RP', '2019-nCoVPC_N1', '2019-nCoVPC_N2'],
@@ -57,40 +57,40 @@ class Protocol
       default_job_params: default_job_params,
       default_operation_params: default_operation_params
     )
-    
+
     provision_plates(
       operations: operations
     )
-    
+
     create_microtiter_plates(operations: operations)
     all_inputs = build_stripwell_primer_probe_compositions(operations: operations)
-    
+
     if operations.errored.any?
-       error_operations
-       return {}
+      error_operations
+      return {}
     end
-    
+
     show_prepare_workspace
-    
+
     set_locations(all_inputs, 'Bench')
-    
+
     retrieve_materials(all_inputs)
-    
+
     record_lot_numbers(operations: operations)
-    
+
     assemble_primer_probe_plates(operations: operations)
 
     operations.store
 
     {}
   end
-  
+
   def error_operations
     operations.each { |op| op.set_status_recursively('pending') }
     operations.store
     show do
       title 'Job Failed'
-      note 'This job failed, please talk with the lab manager to figure out why'
+      note 'There are not enough primer probes in inventory.  Please talk with the lab manager'
     end
   end
 
@@ -155,7 +155,7 @@ class Protocol
       method = operation.temporary[:options][:layout_method]
       group_size = operation.temporary[:options][:group_size]
       program_name = operation.temporary[:options][:program_name]
-    
+
       output_collection = operation.output(PLATE).collection
       output_collection.associate(PRIMER_GROUP_SIZE_KEY, group_size)
       output_collection.associate(COMPOSITION_NAME_KEY, program_name)
