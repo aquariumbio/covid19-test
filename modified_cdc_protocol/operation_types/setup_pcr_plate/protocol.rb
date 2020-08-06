@@ -7,6 +7,7 @@ needs 'Standard Libs/Pipettors'
 needs 'Standard Libs/Units'
 needs 'Standard Libs/AssociationManagement'
 needs 'Standard Libs/LabwareNames'
+needs 'Standard Libs/ItemActions'
 needs 'Collection Management/CollectionActions'
 needs 'Microtiter Plates/MicrotiterPlates'
 needs 'Microtiter Plates/PlateLayoutGenerator'
@@ -25,6 +26,7 @@ class Protocol
   include Pipettors
   include Units
   include LabwareNames
+  include ItemActions
   include AssociationManagement
   include SetupPCRPlateDebug
   include CollectionActions
@@ -37,7 +39,9 @@ class Protocol
     {
       program_name: 'Modified_CDC',
       layout_method: 'modified_primer_layout',
-      group_size: 8
+      group_size: 8,
+      sample_names: ['RP', '2019-nCoVPC_N1', '2019-nCoVPC_N2'],
+      object_type: 'Stripwell'
     }
   end
 
@@ -53,25 +57,41 @@ class Protocol
       default_job_params: default_job_params,
       default_operation_params: default_operation_params
     )
-    
 
     provision_plates(
       operations: operations
     )
 
-    operations.retrieve
+    create_microtiter_plates(operations: operations)
+    all_inputs = build_stripwell_primer_probe_compositions(operations: operations)
 
-    record_lot_numbers(operations: operations)
+    if operations.errored.any?
+      error_operations
+      return {}
+    end
 
     show_prepare_workspace
 
-    build_stripwell_master_mix_compositions(operations: operations)
+    set_locations(all_inputs, 'Bench')
+
+    retrieve_materials(all_inputs)
+
+    record_lot_numbers(operations: operations)
 
     assemble_primer_probe_plates(operations: operations)
 
     operations.store
 
     {}
+  end
+
+  def error_operations
+    operations.each { |op| op.set_status_recursively('pending') }
+    operations.store
+    show do
+      title 'Job Failed'
+      note 'There are not enough primer probes in inventory.  Please talk with the lab manager'
+    end
   end
 
   #======== record lot numbers ======#
@@ -120,29 +140,34 @@ class Protocol
   #
   # @param operations [Array<Operations>] 
   def assemble_primer_probe_plates(operations:)
-    operations.each { |op| assemble_primer_probe_plate(operation: op) }
+    operations.each do |op|
+      add_compositions(compositions: op.temporary[:compositions],
+                       microtiter_plate: op.temporary[:microtiter_plate])
+    end
   end
-
-  # Assembles the primer probe stripwells in the 96 well rack
+  
+  # Creates microtiter plate for each operation and
+  # associates it to temporary associations under :microtiter_plate
   #
-  # @param operation [Operation]
-  def assemble_primer_probe_plate(operation:)
-    method = operation.temporary[:options][:layout_method]
-    group_size = operation.temporary[:options][:group_size]
-    program_name = operation.temporary[:options][:program_name]
+  # @param operations [OperationList]
+  def create_microtiter_plates(operations:)
+    operations.each do |operation|
+      method = operation.temporary[:options][:layout_method]
+      group_size = operation.temporary[:options][:group_size]
+      program_name = operation.temporary[:options][:program_name]
 
-    output_collection = operation.output(PLATE).collection
-    output_collection.associate(PRIMER_GROUP_SIZE_KEY, group_size)
-    output_collection.associate(COMPOSITION_NAME_KEY, program_name)
-    output_collection.associate(PRIMER_METHOD_KEY, method)
+      output_collection = operation.output(PLATE).collection
+      output_collection.associate(PRIMER_GROUP_SIZE_KEY, group_size)
+      output_collection.associate(COMPOSITION_NAME_KEY, program_name)
+      output_collection.associate(PRIMER_METHOD_KEY, method)
 
-    microtiter_plate = MicrotiterPlateFactory.build(
-      collection: output_collection,
-      group_size: group_size,
-      method: method
-    )
-    add_compositions(compositions: operation.temporary[:compositions],
-                   microtiter_plate: microtiter_plate)
+      microtiter_plate = MicrotiterPlateFactory.build(
+        collection: output_collection,
+        group_size: group_size,
+        method: method
+      )
+      operation.temporary[:microtiter_plate] = microtiter_plate
+    end
   end
 
   # Adds list of stripwells to microtiter plate

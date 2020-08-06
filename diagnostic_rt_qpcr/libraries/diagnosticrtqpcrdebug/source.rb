@@ -15,9 +15,7 @@ module DiagnosticRTqPCRDebug
     {
       group_size: 3,
       program_name: 'CDC_TaqPath_CG',
-      debug_primer: [5, 8, 9], # rp, n1, n2,
       debug_template: 'template',
-      debug_item_ids: [257] + Array.new(22, 256)
     }
   end
 
@@ -29,7 +27,6 @@ module DiagnosticRTqPCRDebug
   def setup_test_plates(operations:, method: nil)
     operations.each do |op|
       setup_test_plate(collection: op.input(PLATE).collection, method: method)
-      op.set_input('Template', Item.find(debug_parameters[:debug_item_ids]))
     end
   end
 
