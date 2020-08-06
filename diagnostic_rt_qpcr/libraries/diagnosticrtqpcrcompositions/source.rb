@@ -7,33 +7,91 @@ needs 'PCR Libs/PCRComposition'
 #
 # @author Devin Strickland <strcklnd@uw.edu>
 module DiagnosticRTqPCRCompositions
-  PRIMER_PROBE_MIX = 'Primer/Probe Mix' # Should converge with PRIMER_PROBE_MIX
-      # in PCRCOmpositionDefinitions
+  include PCRCompositionDefinitions
+
+  PRIMER_PROBE_MIX = 'Primer/Probe Mix'
   TEMPLATE = 'Template'
 
   # Initialize all `PCRComposition`s for each operation stripwell
   #
   # @param operations [OperationList]
   # @return [void]
-  def build_stripwell_master_mix_compositions(operations:)
+  def build_stripwell_primer_probe_compositions(operations:)
     operations.each do |op|
-      primer_mixes = []
-      op.input_array(PRIMER_PROBE_MIX).each do |fv|
-        primer_mixes += fv.collection.parts
+      options = op.temporary[:options]
+      program_name = options[:program_name]
+
+      stripwells = find_stripwells(sample_names: options[:sample_names],
+                                   stripwell_ot: options[:object_type],
+                                   rows: op.temporary[:microtiter_plate]
+                                                 .collection.dimensions[0])
+      if stripwells.any?(&:empty?)
+        op.error(ProtocolError, 'No enough parts in inventory')
+        next
       end
 
-      compositions = []
-
-      primer_mixes.each do |primer_mix|
-        composition = build_modified_master_mix_composition(
-          primer_mix: primer_mix,
-          program_name: op.temporary[:options][:program_name]
-        )
-        compositions.append(composition)
-      end
-
+      compositions = setup_composition_parts(parts_by_row: stripwells.map(&:parts),
+                                             program_name: program_name)
       op.temporary[:compositions] = compositions
     end
+  end
+
+  # Sets up the compositions to be created
+  #
+  # @param parts_by_row [Array<Array<Item>>]
+  # @param program_name [String]
+  def setup_composition_parts(parts_by_row:, program_name:)
+    compositions = []
+    parts_by_row.each do |parts|
+      parts.each do |item|
+        compositions.push(
+          build_primer_probe_composition(item: item,
+                                         program_name: program_name)
+        )
+      end
+    end
+    compositions
+  end
+
+  # Orders sample names properly and repeats to fill the number of rows
+  #
+  # @param sample_names [Array<'Strings'>] names of samples
+  # @param stripwell_ot [String] the name of the object type/container 
+  # @param rows [Int] the number of rows
+  def find_stripwells (sample_names:, stripwell_ot:, rows:)
+    ordered_sample_names = Array.new(
+      rows/sample_names.length, sample_names).flatten
+    find_collection(sample_names: ordered_sample_names,
+                    object_type: stripwell_ot)
+  end
+
+  # Finds array of collections containing the Sample Names. Of the
+  # right object type. TODO move somewhere else (Collection Management?)
+  #
+  # @param sample_names [Array<'Strings'>] names of samples
+  # @param objet_type [String] the name of the object type/container
+  def find_collection(sample_names:, object_type:)
+    stripwells = []
+    sample_names.each do |name|
+      possible_items_id = Item.where(sample: Sample.find_by_name(name))
+                           .to_ary
+                           .reject(&:deleted?)
+                           .select(&:is_part)
+                           .map(&:containing_collection)
+                           .uniq
+                           .select { |col| col.object_type.name == object_type }
+                           .reject { |item| item.get('Provisioned') == 'Provisioned' }
+                           .map(&:id)
+      unless possible_items_id.present?
+        stripwells.push(nil)
+        next 
+      end
+
+      stripwell = Collection.find(possible_items_id.first)
+      stripwell.associate('Provisioned', 'Provisioned')
+      stripwells.push(stripwell)
+    end
+    stripwells
   end
 
   # Initialize a `PCRComposition` for a given primer mix and program
@@ -42,9 +100,9 @@ module DiagnosticRTqPCRCompositions
   # @param primer_mix [Item]
   # @param program_name [String]
   # @return [PCRComposition]
-  def build_modified_master_mix_composition(primer_mix:, program_name:)
+  def build_primer_probe_composition(item:, program_name:)
     composition = PCRCompositionFactory.build(program_name: program_name)
-    composition.primer_probe_mix.item = primer_mix
+    composition.primer_probe_mix.item = item
     composition
   end
 
@@ -163,4 +221,5 @@ module DiagnosticRTqPCRCompositions
       volume: component.volume_hash
     }
   end
+
 end
