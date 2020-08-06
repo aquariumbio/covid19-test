@@ -1,28 +1,36 @@
 # Library code here
 
-#needs 'Standard Libs/Debug'
-#needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
+needs 'Standard Libs/Debug'
+needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
 module SetupPCRPlateDebug
- # include Debug
- # include DiagnosticRTqPCRHelper
+  include Debug
+  include DiagnosticRTqPCRHelper
 
   # Sets up test for debugging
   #
   # @param operations [OperationList] list of operations that need to be set up
   def setup_test(operations)
-      operations.make
-      operations.each do |op|
-        output_collection = op.output('PCR Plate').collection
-        rows = output_collection.dimensions[0]
-        sample_names = ['RP', '2019-nCoVPC_N1', '2019-nCoVPC_N2']
-        (rows/(sample_names.length)).times do
-            sample_names.each do |name|
-                collection = Collection.new_collection('Stripwell')
-                samples = Array.new(collection.dimensions[0], Sample.find_by_name(name))
-                collection.add_samples(samples)
-            end
-        end
+    operations.make
+    operations.each do |op|
+      rows = op.output('PCR Plate').collection.dimensions[0]
+      op.set_input('Primer/Probe Mix', generate_stripwells(op.input_array(PRIMER_MIX), rows))
+    end
+  end
+
+  # Generates fake populated strip wells
+  #
+  def generate_stripwells(sampl_fv, rows)
+    samples = sampl_fv.map { |fv| fv.sample }
+    strip_wells = []
+    (rows/samples.length).times do
+      samples.each do |sample|
+        strip_well = Collection.new_collection('Stripwell')
+        sample_array = Array.new(strip_well.capacity, sample)
+        strip_well.add_samples(sample_array)
+        strip_wells.push(strip_well)
       end
+    end
+    strip_wells
   end
 end

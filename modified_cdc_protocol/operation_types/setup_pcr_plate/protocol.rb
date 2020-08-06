@@ -63,20 +63,22 @@ class Protocol
     )
 
     create_microtiter_plates(operations: operations)
-    all_inputs = build_stripwell_primer_probe_compositions(operations: operations)
+    build_stripwell_primer_probe_compositions(operations: operations)
 
     if operations.errored.any?
       error_operations
       return {}
     end
 
-    show_prepare_workspace
+    all_inputs = get_all_composition_stripwells(operations: operations).flatten
 
-    set_locations(all_inputs, 'Bench')
+    show_prepare_workspace
 
     retrieve_materials(all_inputs)
 
-    record_lot_numbers(operations: operations)
+    set_locations(all_inputs, 'Bench')
+
+    get_lot_number(all_inputs)
 
     assemble_primer_probe_plates(operations: operations)
 
@@ -96,13 +98,20 @@ class Protocol
 
   #======== record lot numbers ======#
 
-  # Handles associations and directions to get and record stripwell lot numbers
-  #
-  # @param operations [OperationList]
-  def record_lot_numbers(operations:)
+  def get_all_composition_stripwells(operations:)
+    all_stripwells = []
     operations.each do |op|
-      get_lot_number(op.input_array(PRIMER_PROBE_MIX).map { |fv| fv.collection })
+      all_stripwells.push(get_composition_stripwells(operation: op))
     end
+    all_stripwells
+  end
+
+  def get_composition_stripwells(operation:)
+    stripwells = []
+    operation.temporary[:compositions].each do |comp|
+      stripwells.push(Collection.find(comp.primer_probe_mix.item.containing_collection.id))
+    end
+    stripwells.uniq!
   end
 
   # Gets tech to read and record lot numbers of stripwells
