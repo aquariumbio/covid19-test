@@ -5,6 +5,12 @@
   "category": "Modified CDC Protocol",
   "inputs": [
     {
+      "name": "Primer/Probe Mix",
+      "part": false,
+      "array": true,
+      "routing": "P"
+    },
+    {
       "name": "Options",
       "part": false,
       "array": false,
