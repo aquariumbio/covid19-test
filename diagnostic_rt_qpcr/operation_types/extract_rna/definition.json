@@ -1,5 +1,5 @@
 {
-  "id": 4,
+  "id": 6,
   "name": "Extract RNA",
   "parent_class": "OperationType",
   "category": "Diagnostic RT-qPCR",
@@ -11,9 +11,15 @@
       "routing": "S"
     },
     {
+      "name": "Method",
+      "part": false,
+      "array": false,
+      "routing": null
+    },
+    {
       "name": "Options",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": null
     }
   ],
@@ -22,7 +28,7 @@
       "name": "Specimen",
       "part": false,
       "array": false,
-      "routing": "T"
+      "routing": "S"
     }
   ],
   "on_the_fly": false,
