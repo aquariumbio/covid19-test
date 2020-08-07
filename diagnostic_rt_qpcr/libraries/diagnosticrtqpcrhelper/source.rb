@@ -159,15 +159,23 @@ module DiagnosticRTqPCRHelper
   #
   # @param items [Array<Item>]
   # @return [String]
-  # @todo Make it deal with non-consecutive numbers
   def id_ranges_display(items:)
-    range = items.map(&:id).sort
-    first = range.first
-    last = range.last
-    unless (last - first + 1) == range.length
-      raise ProtocolError, 'Nonconsecutive item IDs detected'
+    ids = items.map(&:id).sort
+    ranges = []
+    range = [ids.shift]
+
+    ids.each do |id|
+      if id == range.last + 1
+        range.append(id)
+      else
+        ranges.append(range)
+        range = [id]
+      end
     end
-    "#{first} - #{last}"
+    ranges.append(range)
+
+    ranges.map! { |r| r.length == 1 ? r.first.to_s : "#{r.first} - #{r.last}" }
+    ranges.to_sentence
   end
 
   ########## PROVENANCE METHODS ##########
