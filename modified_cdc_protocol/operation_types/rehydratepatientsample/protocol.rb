@@ -38,7 +38,7 @@ class Protocol
 
   def default_operation_params
     {
-      media_volume_microliters: 1000,
+      media_volume_microliters: 300,
     }
   end
 
@@ -89,6 +89,8 @@ class Protocol
                      rc_list: sample_rack.find_multiple(item_list))
     end
     operations.store
+    
+    protocol_survey(operations)
 
     {}
   end

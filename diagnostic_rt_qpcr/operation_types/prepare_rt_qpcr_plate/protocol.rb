@@ -35,9 +35,9 @@ class Protocol
       negative_template_control: nil,
       negative_template_location: nil,
       positive_template_control: 'nCoVPC',
-      positive_template_location: [0, 11],
-      program_name: 'CDC_TaqPath_CG',
-      group_size: 3,
+      positive_template_location: [0, 7],
+      program_name: 'Modified_CDC',
+      group_size: 2,
       layout_method: 'cdc_sample_layout'
     }
   end
@@ -62,6 +62,8 @@ class Protocol
     end
 
     operations.store
+    
+    protocol_survey(operations)
 
     {}
   end

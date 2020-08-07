@@ -11,6 +11,7 @@ needs 'Collection Management/CollectionDisplay'
 needs 'Collection Management/CollectionTransfer'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRDebug'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRCompositions'
+needs 'Diagnostic RT-qPCR/ProtocolSurvey'
 
 # Module for elements that are common throughout Diagnostic RT qPCR
 #
@@ -33,6 +34,7 @@ module DiagnosticRTqPCRHelper
   include DataAssociationKeys
   include DiagnosticRTqPCRDebug
   include DiagnosticRTqPCRCompositions
+  include ProtocolSurvey
 
   WATER = 'Molecular Grade Water'
   WATER_OBJECT_TYPE = 'Reagent Aliquot'

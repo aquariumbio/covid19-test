@@ -7,6 +7,7 @@ needs 'Standard Libs/PlanParams'
 needs 'Standard Libs/Debug'
 needs 'Standard Libs/UploadHelper'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
+needs 'Diagnostic RT-qPCR/DataAssociationkeys'
 
 # Protocol for loading samples into a qPCR thermocycler and running it
 #
@@ -73,9 +74,10 @@ class Protocol
     running_thermocyclers = start_thermocyclers(paired_ops)
 
     get_data(running_thermocyclers: running_thermocyclers)
-
-    # TODO Also errors out
-    # paired_ops.store
+    
+    protocol_survey(operations)
+    
+    workflow_survey(operations)
 
     {}
   end

@@ -94,6 +94,8 @@ class Protocol
 
     operations.store
 
+    protocol_survey(operations)
+    
     inspect_data_associations(operation: operations.first) if debug
 
     {}

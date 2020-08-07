@@ -3,6 +3,7 @@
 
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 
+
 # 1) Upon receipt, store dried primers and probes at 2-8C.
 # 2) Precautions: These reagents should only be handled in a clean area and
 # stored at appropriate temperatures (see below) in the dark. Freeze-thaw cycles
@@ -60,24 +61,31 @@ class Protocol
       default_operation_params: default_operation_params
     )
 
+    get_tubes(count: operations.length)
     operations.retrieve
-    water = water_item
-    take([water], interactive: true)
 
     save_output(operations)
-    suspend_primer_mix(
-      water: water,
-      vol_water: VOL_WATER,
-      time_rehydrate: TIME_REHYDRATE
-    )
+    suspend_primer_mix
 
     # Group the operations by the input reagent
     ops_by_input = operations.group_by { |op| op.input(PRIMER_MIX).item }
     ops_by_input.each do |primer, ops|
-      make_aliquots(ops: ops, primer: primer, water: water)
+      make_aliquots(ops: ops, primer: primer)
     end
 
     operations.store(interactive: true, io: 'output', method: 'boxes')
+    
+    protocol_survey(operations)
+    
+  end
+
+  # Get 5 1.5 mL tubes per dried reagent
+  # @param count [Integer] the number of operations currently running
+  def get_tubes(count:)
+    show do
+      title "Get new #{TUBE_MICROFUGE}"
+      check "Please get #{count * OUTPUT_ITEMS_NUM[:qty]} #{TUBE_MICROFUGE}"
+    end
   end
 
   # Create and save multiple output Items per operation
@@ -115,48 +123,39 @@ class Protocol
     fv.save
   end
 
-  def suspend_primer_mix(water:, vol_water:, time_rehydrate:)
-    show_suspend_primer_mix(
-      water: water,
-      vol_water: vol_water,
-      time_rehydrate: time_rehydrate
-    )
-  end
-
   # Instructions for suspending dried reagents
-  def show_suspend_primer_mix(water:, vol_water:, time_rehydrate:)
+  def suspend_primer_mix
     show do
-      title 'Resuspend Primer Mix'
+      title 'Suspend Primer Mix'
       warning 'These reagents should only be handled in a clean area.'
       warning 'Avoid reeze-thaw cycles. Maintain on ice when thawed.'
       check "Using aseptic technique, suspend each dried primer in \
-             #{qty_display(vol_water)} of nuclease-free water."
-      check "Incubate for #{qty_display(time_rehydrate)} at room temperature \
+             #{qty_display(VOL_WATER)} of nuclease-free water."
+      check "Rehydrate for #{qty_display(TIME_REHYDRATE)} at room temperature \
             in the dark."
-      # timer initial: { minutes: time_rehydrate[:qty] }
+      timer initial: { minutes: TIME_REHYDRATE[:qty] }
     end
   end
 
   # Make 5 aliquots for each primer
   # @param operations [OperationList] Array of operations grouped by primer
-  def make_aliquots(ops:, primer:, water:)
+  def make_aliquots(ops:, primer:)
     # last_tube_id = '' # keep one of each primer
     ops.each do |op|
+      input_primers = Array.new(OUTPUT_ITEMS_NUM[:qty], primer)
       aliquot_items = op.outputs.map(&:item)
-      id_ranges = id_ranges_display(items: aliquot_items)
-      tubes = TUBE_MICROFUGE.pluralize(aliquot_items.length)
+      table = Table.new
+                   .add_column('Primer Mix ID', input_primers.map(&:to_s))
+                   .add_column('Destination Tube ID', aliquot_items.map(&:to_s))
 
       show do
-        title 'Aliquot Primer/Probe Mixes'
-
-        check "Get #{aliquot_items.length} #{tubes}."
-        check "Label the tubes #{id_ranges}"
+        title 'Make Aliquots'
+        check 'Label destination tube IDs according to the table.'
         check "Mix solution gently and aliquot #{qty_display(VOL_SUSPENSION)} \
-              of rehydrated primer into each of the #{tubes}."
-        check "Discard the empty primer tube #{primer}."
+              of rehydrated primer into each tube according to the table."
+        table table
       end
 
-      add_aliquot_provenance(stock_item: water, aliquot_items: aliquot_items)
       add_aliquot_provenance(stock_item: primer, aliquot_items: aliquot_items)
 
       primer.mark_as_deleted
