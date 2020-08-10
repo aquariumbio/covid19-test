@@ -152,7 +152,7 @@ class Protocol
         title 'Aliquot Primer/Probe Mixes'
 
         check "Get #{aliquot_items.length} #{tubes}."
-        check "Label the tubes #{id_ranges}"
+        check "Label the tubes #{id_ranges}."
         check "Mix solution gently and aliquot #{qty_display(VOL_SUSPENSION)} \
               of rehydrated primer into each of the #{tubes}."
         check "Discard the empty primer tube #{primer}."
