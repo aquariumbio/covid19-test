@@ -68,6 +68,8 @@ class Protocol
 
     operations.store
 
+    protocol_survey(operations)
+
     {}
   end
 

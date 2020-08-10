@@ -66,6 +66,8 @@ class Protocol
     add_specimen_provenance(operations: operations)
 
     operations.store
+    
+    protocol_survey(operations)
 
     {}
   end

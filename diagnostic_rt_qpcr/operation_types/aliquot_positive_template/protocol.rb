@@ -88,6 +88,8 @@ class Protocol
     # experiment and hold on ice until adding to plate.
     # Discard any unused portion of the aliquot.
     operations.store(interactive: true, io: 'output', method: 'boxes')
+    
+    protocol_survey(operations)
   end
 
   # Label the tubes so that the same reagents have consecutive IDs

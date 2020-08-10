@@ -78,6 +78,8 @@ class Protocol
     end
 
     operations.store(interactive: true, io: 'output', method: 'boxes')
+    
+    protocol_survey(operations)
   end
 
   # Create and save multiple output Items per operation
