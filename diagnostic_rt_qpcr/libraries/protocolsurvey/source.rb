@@ -9,7 +9,6 @@ module ProtocolSurvey
                 'while executing this Job?  If so briefly explain.'
     survey = show do
       title 'Protocol Survey'
-      note 'Please answer the following question to the best of your ability'
       separator
       note question1
       get('text',
@@ -28,7 +27,6 @@ module ProtocolSurvey
                   'If so, please specify which steps.'
     survey = show do
       title 'Protocol Survey'
-      note 'Please answer the following question to the best of your ability'
       separator
       note question1
       get('text',
