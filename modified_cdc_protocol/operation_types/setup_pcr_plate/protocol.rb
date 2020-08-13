@@ -81,6 +81,8 @@ class Protocol
     get_lot_number(all_inputs)
 
     assemble_primer_probe_plates(operations: operations)
+    
+    all_inputs.map{ |item| item.mark_as_deleted }
 
     operations.store
 
@@ -113,7 +115,7 @@ class Protocol
     operation.temporary[:compositions].each do |comp|
       stripwells.push(Collection.find(comp.primer_probe_mix.item.containing_collection.id))
     end
-    stripwells.uniq!
+    stripwells.uniq
   end
 
   # Gets tech to read and record lot numbers of stripwells
