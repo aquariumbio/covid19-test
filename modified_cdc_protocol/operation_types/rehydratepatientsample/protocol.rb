@@ -46,7 +46,6 @@ class Protocol
   end
 
   def main
-    # setup_test(operations)
     @job_params = update_all_params(
       operations: operations,
       default_job_params: default_job_params,

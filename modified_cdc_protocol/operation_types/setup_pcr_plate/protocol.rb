@@ -41,7 +41,7 @@ class Protocol
       layout_method: 'modified_primer_layout',
       group_size: 8,
       sample_names: ['RP', '2019-nCoVPC_N1', '2019-nCoVPC_N2'],
-      object_type: 'Stripwell'
+      object_type: '8 Well Stripwell'
     }
   end
 
@@ -51,7 +51,7 @@ class Protocol
   end
 
   def main
-    setup_test(operations) if debug
+    setup_test(operations, default_operation_params[:object_type]) if debug
     @job_params = update_all_params(
       operations: operations,
       default_job_params: default_job_params,
