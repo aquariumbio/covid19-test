@@ -38,10 +38,12 @@ class Protocol
   def default_operation_params
     {
       program_name: 'Modified_CDC',
-      layout_method: 'modified_primer_layout',
+      layout_method: 'skip_primer_layout',
       group_size: 8,
       sample_names: ['RP', '2019-nCoVPC_N1', '2019-nCoVPC_N2'],
-      object_type: '8 Well Stripwell'
+      object_type: '8 Well Stripwell',
+      stripwell_id: nil,
+      num_stripwells: 3
     }
   end
 
@@ -200,7 +202,8 @@ class Protocol
       stripwells.each_with_index do |stripwell, idx|
         add_stripwell(composition_group: stripwell_groups[stripwell],
                       microtiter_plate: microtiter_plate,
-                      stripwell: stripwell)
+                      stripwell: stripwell,
+                      key: PRIMER_PROBE_MIX_KEY)
       end
     end
   end
