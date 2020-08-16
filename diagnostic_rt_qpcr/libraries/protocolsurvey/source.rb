@@ -36,13 +36,13 @@ module ProtocolSurvey
       separator
       note question2
       get('text',
-          var: question1,
+          var: question2,
           label: "Put 'NA' if not applicable",
           default: '')
     end
     answers  =[
       { question: question1, response: survey.get_response(question1) },
-      { question: question1, response: survey.get_response(question1) }
+      { question: question2, response: survey.get_response(question2) }
     ]
     associate_answers(operations: operations, answers: answers)
   end

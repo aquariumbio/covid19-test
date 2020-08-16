@@ -20,13 +20,19 @@ module DiagnosticRTqPCRCompositions
     operations.each do |op|
       options = op.temporary[:options]
       program_name = options[:program_name]
-
-      stripwells = find_stripwells(sample_names: options[:sample_names],
-                                   stripwell_ot: options[:object_type],
-                                   rows: op.temporary[:microtiter_plate]
-                                                 .collection.dimensions[0])
-      if stripwells.any?(&:empty?)
-        op.error(ProtocolError, 'No enough parts in inventory')
+      given_stripwells = options[:stripwell_id]
+      stripwells = []
+      if given_stripwells
+        stripwells = given_stripwells.map { |id| Collection.find(id) }
+      else
+        stripwells = find_stripwells(sample_names: options[:sample_names],
+                                     stripwell_ot: options[:object_type],
+                                     rows: op.temporary[:microtiter_plate]
+                                             .collection.dimensions[0],
+                                     num_stripwells: options[:num_stripwells])
+      end
+      if stripwells.any?(&:blank?)
+        op.error(ProtocolError, 'Not enough parts in inventory')
         next
       end
 
@@ -58,9 +64,10 @@ module DiagnosticRTqPCRCompositions
   # @param sample_names [Array<'Strings'>] names of samples
   # @param stripwell_ot [String] the name of the object type/container 
   # @param rows [Int] the number of rows
-  def find_stripwells (sample_names:, stripwell_ot:, rows:)
-    ordered_sample_names = Array.new(
-      rows/sample_names.length, sample_names).flatten
+  def find_stripwells(sample_names:, stripwell_ot:, rows:, num_stripwells: nil)
+    num_stripwells ||= rows
+    num_stripwells /= sample_names.length
+    ordered_sample_names = Array.new(num_stripwells, sample_names).flatten
     find_collection(sample_names: ordered_sample_names,
                     object_type: stripwell_ot)
   end

@@ -15,8 +15,6 @@ needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Tube Rack/TubeRack'
 needs 'Tube Rack/TubeRackHelper'
 
-MEDIA = 'Media'
-
 class Protocol
   # Standard Libs
   include PlanParams
@@ -38,7 +36,7 @@ class Protocol
 
   def default_operation_params
     {
-      media_volume_microliters: 300,
+      media_volume_microliters: 300
     }
   end
 
