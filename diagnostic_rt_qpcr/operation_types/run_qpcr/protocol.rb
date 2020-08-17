@@ -90,9 +90,11 @@ class Protocol
   
     def flick_to_remove_bubbles(paired_ops)
       show do
-        title 'Examin for Bubbles'
-        note 'Examin all wells in plates for bubbles'
-        note 'If there are bubles gently flick plate to until bubbles are gone'
+        title 'Examine for Bubbles'
+        note 'Examine all wells in plates for bubbles'
+        note 'If there are bubbles gently remove stripwell and flick plate until bubbles are gone'
+        note 'INSERT GIF'
+        note 'Plates:'
         paired_ops.each do |op|
           note op.input(PLATE).collection.id.to_s
         end
@@ -101,8 +103,8 @@ class Protocol
   
   def spin_down_plates(paired_ops)
       show do
-        title 'Spin Down Plate'
-        note 'Spin down the following plate'
+        title 'Spin Down' + ' Plates'.pluralize(paired_ops.length)
+        note 'Spin down the following' + ' plate'.pluralize(paired_ops.length)
         paired_ops.each do |op|
           note op.input(PLATE).collection.id.to_s
         end
@@ -177,13 +179,12 @@ class Protocol
   def get_available_thermocyclers
     thermocyclers = find_thermocyclers
     available_key = 'available'
-    response = show {
+    response = show do
       title 'Check Available Thermocyclers'
       note 'Please check which thermocyclers are currently available'
       thermocyclers.each { |thermo|
-        select [ available_key, 'unavailable' ], var: thermo['name'], label: "Thermocycler #{thermo['name']}", default: 1
-      }
-    }
+        select [ available_key, 'unavailable' ], var: thermo['name'], label: "Thermocycler #{thermo['name']}", default: 1 }
+    end
     available_thermo = []
     thermocyclers.map do |thermo|
       next unless response[thermo['name'].to_sym].to_s == available_key || debug
