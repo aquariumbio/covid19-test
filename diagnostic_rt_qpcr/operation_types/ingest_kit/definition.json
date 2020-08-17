@@ -1,0 +1,10 @@
+{
+  "id": 28,
+  "name": "Ingest Kit",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [],
+  "outputs": [],
+  "on_the_fly": null,
+  "user_id": 1
+}

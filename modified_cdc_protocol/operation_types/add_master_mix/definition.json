@@ -1,36 +1,36 @@
 {
-  "id": 29,
+  "id": 20,
   "name": "Add Master Mix",
   "parent_class": "OperationType",
   "category": "Modified CDC Protocol",
   "inputs": [
     {
       "name": "PCR Plate",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": "p"
     },
     {
       "name": "Options",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": null
     },
     {
       "name": "Rehydration Buffer",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": "Buffer"
     }
   ],
   "outputs": [
     {
       "name": "PCR Plate",
-      "part": null,
-      "array": null,
+      "part": false,
+      "array": false,
       "routing": "p"
     }
   ],
-  "on_the_fly": null,
+  "on_the_fly": false,
   "user_id": 1
 }

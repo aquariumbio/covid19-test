@@ -183,7 +183,8 @@ class Protocol
       title 'Check Available Thermocyclers'
       note 'Please check which thermocyclers are currently available'
       thermocyclers.each { |thermo|
-        select [ available_key, 'unavailable' ], var: thermo['name'], label: "Thermocycler #{thermo['name']}", default: 1 }
+        select [ available_key, 'unavailable' ], var: thermo['name'], label: "Thermocycler #{thermo['name']}", default: 1
+        }
     end
     available_thermo = []
     thermocyclers.map do |thermo|

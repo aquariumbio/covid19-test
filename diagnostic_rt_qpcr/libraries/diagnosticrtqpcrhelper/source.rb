@@ -269,12 +269,12 @@ module DiagnosticRTqPCRHelper
   # @param composition_group [Array<Compositions>] list of compositions that are
   #    all contained in the same stripwell
   # @param microtiter_plate [MicrotiterPlate]
-  def add_stripwell(composition_group:, microtiter_plate:, stripwell:)
-    layout_group = microtiter_plate.next_empty_group(key: PRIMER_PROBE_MIX_KEY)
+  def add_stripwell(composition_group:, microtiter_plate:, stripwell:, key:)
+    layout_group = microtiter_plate.next_empty_group(key: key)
     composition_group.zip(layout_group).each do |composition, lyt|
       data = added_component_data(composition: composition)
       microtiter_plate.associate_provenance(index: lyt,
-                                            key: PRIMER_PROBE_MIX_KEY,
+                                            key: key,
                                             data: data)
     end
     show_add_stripwell(layout_group: layout_group,
