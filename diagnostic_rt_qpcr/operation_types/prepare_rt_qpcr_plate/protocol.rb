@@ -37,8 +37,8 @@ class Protocol
       positive_template_control: 'nCoVPC',
       positive_template_location: [0, 7],
       program_name: 'Modified_CDC',
-      group_size: 3,
-      layout_method: 'skip_sample_layout'
+      group_size: s,
+      layout_method: 'cdc_sample_layout'
     }
   end
 
