@@ -70,6 +70,12 @@ class Protocol
 
     # TODO this errors
     # paired_ops.retrieve
+    
+    retrieve_materials(paired_ops.map { |op| op.input(PLATE).collection } )
+    
+    spin_down_plates(paired_ops)
+    
+    flick_to_remove_bubbles(paired_ops)
 
     running_thermocyclers = start_thermocyclers(paired_ops)
 
@@ -80,6 +86,29 @@ class Protocol
     workflow_survey(operations)
 
     {}
+  end
+  
+    def flick_to_remove_bubbles(paired_ops)
+      show do
+        title 'Examine for Bubbles'
+        note 'Examine all wells in plates for bubbles'
+        note 'If there are bubbles gently remove stripwell and flick plate until bubbles are gone'
+        note 'INSERT GIF'
+        note 'Plates:'
+        paired_ops.each do |op|
+          note op.input(PLATE).collection.id.to_s
+        end
+      end
+  end
+  
+  def spin_down_plates(paired_ops)
+      show do
+        title 'Spin Down' + ' Plates'.pluralize(paired_ops.length)
+        note 'Spin down the following' + ' plate'.pluralize(paired_ops.length)
+        paired_ops.each do |op|
+          note op.input(PLATE).collection.id.to_s
+        end
+      end
   end
 
   def get_data(running_thermocyclers:)
@@ -153,16 +182,12 @@ class Protocol
     response = show do
       title 'Check Available Thermocyclers'
       note 'Please check which thermocyclers are currently available'
-      thermocyclers.each_with_index do |thermo|
-        select([available_key, 'unavailable'],
-               var: thermo['name'].to_s,
-               label: "Thermocycler #{thermo['name']}")
-      end
+      thermocyclers.each { |thermo|
+        select [ available_key, 'unavailable' ], var: thermo['name'], label: "Thermocycler #{thermo['name']}", default: 1 }
     end
     available_thermo = []
     thermocyclers.map do |thermo|
-      next unless response[thermo['name'].to_s] == available_key || debug
-
+      next unless response[thermo['name'].to_sym].to_s == available_key || debug
       available_thermo.push(thermo)
     end
     available_thermo
@@ -177,7 +202,8 @@ class Protocol
     ops.each do |op|
       if op.get(THERMOCYCLER_KEY).nil?
         op.error(:unavailablethermocycler, 'No thermocyclers were available')
-        op.set_status_recursively('pending')
+        op.status = 'pending'
+        op.save
         ops_to_remove.push(op)
       end
     end
@@ -188,9 +214,9 @@ class Protocol
     show do
       title 'Thermocyclers Unavailable'
       note 'There are not enough available thermocyclers for this job'
-      warning 'The following plates were removed from this job'
+      note 'Please ensure the following plates remain in the freezer until a thermocycler is available'
       ops_to_remove.each do |op|
-        note op.input(PLATE).collection.id.to_s
+        note "#{op.input(PLATE).collection.id} at #{op.input(PLATE).collection.location}"
       end
     end
   end
@@ -199,7 +225,7 @@ class Protocol
     paired_ops = []
     ops.each do |op|
       thermocyclers.each do |thermo|
-        next unless thermo['model'] == op.temporary[:options][:thermocycler_model] || true
+        next unless thermo['model'] == op.temporary[:options][:thermocycler_model]
 
         op.associate(THERMOCYCLER_KEY, thermo)
         thermocyclers.delete(thermo)
