@@ -232,45 +232,6 @@ class Protocol
       end
     end
   end
-  
-    # Steps for loading physical tubes or plates into a thermocycler
-  #
-  # @param thermocycler [Thermocycler]
-  # @param items [Item, Array<Item>]
-  # @param filename [String] the filename to safe the experiment file
-  # @return [void]
-  #def load_plate_and_start_run(thermocycler:, items: [],
-  #                             experiment_filename: nil)
-  #  # Normalize the presentation of `items`
-  #  items = [items] if items.respond_to?(:collection?)
-  #  plate = single_96well_plate?(items)#
-
-  #    show do
-  #    title "Start Run on #{thermocycler.model} Thermocycler"
-
-      #note thermocycler.open_lid
-      #image thermocycler.open_lid_image
-      #separator
-
-      # TODO: Make this work for plates, stripwells, and individual tubes
-      #if plate
-      #  note thermocycler.place_plate_in_instrument(plate: items.first)
-      ##  warning thermocycler.confirm_plate_orientation
-#      else
- #       note 'Load the PCR tubes into the metal block'
-  #    end
-   #   separator
-
-    #  note thermocycler.close_lid
-     # image thermocycler.close_lid_image
-      #separator
-
-#      note thermocycler.start_run
- #     if experiment_filename.present?
-  #      note thermocycler.save_experiment_file(filename: experiment_filename)
-   #   end
-    #end
-  #end
 
   def associate_measurement(file_name:, plate:)
     file = uploadData(file_name, 1, 4)
