@@ -23,7 +23,7 @@ module DiagnosticRTqPCRCompositions
       given_stripwells = options[:stripwell_id]
       stripwells = []
       if given_stripwells
-        stripwells = Collection.find(given_stripwells)
+        stripwells = given_stripwells.map { |id| Collection.find(id) }
       else
         stripwells = find_stripwells(sample_names: options[:sample_names],
                                      stripwell_ot: options[:object_type],

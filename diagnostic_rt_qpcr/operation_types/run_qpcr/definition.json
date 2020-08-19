@@ -1,5 +1,5 @@
 {
-  "id": 19,
+  "id": 10,
   "name": "Run qPCR",
   "parent_class": "OperationType",
   "category": "Diagnostic RT-qPCR",
