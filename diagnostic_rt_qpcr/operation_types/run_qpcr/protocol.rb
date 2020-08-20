@@ -8,6 +8,8 @@ needs 'Standard Libs/Debug'
 needs 'Standard Libs/UploadHelper'
 needs 'Diagnostic RT-qPCR/DiagnosticRTqPCRHelper'
 needs 'Diagnostic RT-qPCR/DataAssociationkeys'
+needs 'Tube Rack/TubeRack'
+needs 'Tube Rack/TubeRackHelper'
 
 # Protocol for loading samples into a qPCR thermocycler and running it
 #
@@ -19,6 +21,7 @@ class Protocol
   include Debug
   include UploadHelper
   include DiagnosticRTqPCRHelper
+  include TubeRackHelper
 
   THERMOCYCLER_KEY = 'thermocycler'.to_sym
 
@@ -32,8 +35,6 @@ class Protocol
   #
   def default_job_params
     {
-      program_name: 'CDC_TaqPath_CG',
-      qpcr: true
     }
   end
 
@@ -45,6 +46,8 @@ class Protocol
   def default_operation_params
     {
       thermocycler_model: TestThermocycler::MODEL,
+      program_name: 'CDC_TaqPath_CG',
+      qpcr: true
     }
   end
 
@@ -77,9 +80,9 @@ class Protocol
     
     flick_to_remove_bubbles(paired_ops)
 
-    running_thermocyclers = start_thermocyclers(paired_ops)
+    start_thermocyclers(paired_ops)
 
-    get_data(running_thermocyclers: running_thermocyclers)
+    get_data(paired_ops)
     
     protocol_survey(operations)
     
@@ -88,31 +91,32 @@ class Protocol
     {}
   end
   
-    def flick_to_remove_bubbles(paired_ops)
-      show do
-        title 'Examine for Bubbles'
-        note 'Examine all wells in plates for bubbles'
-        note 'If there are bubbles gently remove stripwell and flick plate until bubbles are gone'
-        note 'INSERT GIF'
-        note 'Plates:'
-        paired_ops.each do |op|
-          note op.input(PLATE).collection.id.to_s
-        end
+  def flick_to_remove_bubbles(paired_ops)
+    show do
+      title 'Examine for Bubbles'
+      note 'Examine all wells in plates for bubbles'
+      note 'If there are bubbles gently remove stripwell and flick plate until bubbles are gone'
+      note 'INSERT GIF'
+      note 'Plates:'
+      paired_ops.each do |op|
+        note op.input(PLATE).collection.id.to_s
       end
+    end
   end
   
   def spin_down_plates(paired_ops)
       show do
-        title 'Spin Down' + ' Plates'.pluralize(paired_ops.length)
-        note 'Spin down the following' + ' plate'.pluralize(paired_ops.length)
+        title 'Spin Down Plate'
+        note 'Spin down the following plate'
         paired_ops.each do |op|
           note op.input(PLATE).collection.id.to_s
         end
       end
   end
 
-  def get_data(running_thermocyclers:)
-    running_thermocyclers.each do |op, thermocycler|
+  def get_data(paired_ops)
+    paired_ops.each do |op|
+      thermocycler = op.temporary[:thermocycler]
       go_to_thermocycler(thermocycler_name: op.get(THERMOCYCLER_KEY)['name'])
       export_measurements(thermocycler: thermocycler)
 
@@ -122,56 +126,166 @@ class Protocol
   end
 
   def start_thermocyclers(paired_ops)
-    composition = PCRCompositionFactory.build(
-      program_name: @job_params[:program_name]
-    )
-    program = PCRProgramFactory.build(
-      program_name: @job_params[:program_name]
-    )
-
     running_thermocyclers = []
-    paired_ops.each do |op|
-      plate = op.input(PLATE).collection
 
-      file_name = experiment_filename(plate)
+    paired_ops.group_by(&:plan).each do |plan, ops|
+      composition = PCRCompositionFactory.build(
+        program_name: ops.first.temporary[:options][:program_name]
+      )
 
-      thermo_type = op.get(THERMOCYCLER_KEY)
+      program = PCRProgramFactory.build(
+        program_name: ops.first.temporary[:options][:program_name]
+      )
 
-      op.associate(RAW_QPCR_DATA_KEY, file_name)
-
+      thermo_type = ops.first.get(THERMOCYCLER_KEY)
+      
+      file_name = experiment_filename(plan)
+      
+      ops.each { |op| op.associate(RAW_QPCR_DATA_KEY, file_name) }
+      
       thermocycler = ThermocyclerFactory.build(
         model: thermo_type['model']
       )
-
-      go_to_thermocycler(thermocycler_name: thermo_type['name'], plate: plate)
-
+      
+      ops.each { |op| op.temporary[:thermocycler] = thermocycler }
+      
+      thermocycler_dimensions = thermocycler.params[:dimensions]
+      
+      go_to_thermocycler(thermocycler_name: thermo_type['name'], plates: ops.map{ |op| op.input(PLATE).collection })
+      
       set_up_program(
         thermocycler: thermocycler,
         program: program,
         composition: composition,
-        qpcr: @job_params[:qpcr]
+        qpcr: ops.first.temporary[:options][:program_name]
       )
-
-      load_plate_and_start_run(
-        thermocycler: thermocycler,
-        items: plate,
-        experiment_filename: file_name
-      )
-      running_thermocyclers.push([op, thermocycler])
+      
+      if ops.length == 1
+        load_plate_and_start_run(
+          thermocycler: thermocycler,
+          items: ops.first.input(PLATE).collection,
+          experiment_filename: file_name
+        )
+      else
+        load_stripwells_and_start_run(
+          thermocycler: thermocycler,
+          ops: ops,
+          experiment_filename: file_name
+        )
+      end
+      
+      ops.each { |op| running_thermocyclers.push([op, thermocycler]) }
+      
+      running_thermocyclers
+      
     end
-    running_thermocyclers
   end
+  
+  def load_stripwells_and_start_run(thermocycler:, ops:, experiment_filename: nil)
+    thermocycler_dimensions = thermocycler.params[:dimensions]
+    thermocycler_rack = TubeRack.new(thermocycler_dimensions[0], thermocycler_dimensions[1], name: 'Thermocycler')
+    rotate = thermocycler_dimensions != ops.first.input(PLATE).collection.dimensions
+    
+    
+    show do
+      title "Start Run on #{thermocycler.model} Thermocycler"
+      note thermocycler.open_lid
+      image thermocycler.open_lid_image
+    end
+    
+    ops.each do |op|
+      collection = op.input(PLATE).collection
+      part_by_row = collection.get_non_empty.group_by { |loc| loc[0] }
+      part_by_row.each do |_row, from_row|
+        full_to_row = rotate ? thermocycler_rack.next_empty_column : thermocycler_rack.next_empty_row
+        to_row = full_to_row[0, from_row.length]
+        to_row.each { |loc| thermocycler_rack.set('Occupied', loc[0], loc[1]) }
+        to_row_rcx = []
+        from_row.zip(to_row).each do |from_loc, to_loc|
+          collection.part(from_loc[0], from_loc[1]).associate('thermocycler_well_location', to_loc)
+          to_row_rcx.push(to_loc.push(from_loc[1]))
+        end
+        numerator = (0...(from_row.length + 1)).to_a
+        show do
+          title "Add Stripwell to #{thermocycler.model}"
+          note 'Move Stripwell to thermocycler'
+          warning 'Make sure to keep the proper orientation'
+          separator
+          
+          note "From Plate #{collection.id}"
+          table highlight_collection_rc(collection, from_row) { |r,c| c }
+          note "To thermocycler #{thermocycler.model}"
+          table highlight_tube_rack_rcx(thermocycler_rack, to_row_rcx)
+        end
+      end
+    end
+    
+    show do
+      title 'Close and Start Thermocycler'
+      note thermocycler.close_lid
+      image thermocycler.close_lid_image
+      separator
+
+      note thermocycler.start_run
+      if experiment_filename.present?
+        note thermocycler.save_experiment_file(filename: experiment_filename)
+      end
+    end
+  end
+  
+    # Steps for loading physical tubes or plates into a thermocycler
+  #
+  # @param thermocycler [Thermocycler]
+  # @param items [Item, Array<Item>]
+  # @param filename [String] the filename to safe the experiment file
+  # @return [void]
+  #def load_plate_and_start_run(thermocycler:, items: [],
+  #                             experiment_filename: nil)
+  #  # Normalize the presentation of `items`
+  #  items = [items] if items.respond_to?(:collection?)
+  #  plate = single_96well_plate?(items)#
+
+  #    show do
+  #    title "Start Run on #{thermocycler.model} Thermocycler"
+
+      #note thermocycler.open_lid
+      #image thermocycler.open_lid_image
+      #separator
+
+      # TODO: Make this work for plates, stripwells, and individual tubes
+      #if plate
+      #  note thermocycler.place_plate_in_instrument(plate: items.first)
+      ##  warning thermocycler.confirm_plate_orientation
+#      else
+ #       note 'Load the PCR tubes into the metal block'
+  #    end
+   #   separator
+
+    #  note thermocycler.close_lid
+     # image thermocycler.close_lid_image
+      #separator
+
+#      note thermocycler.start_run
+ #     if experiment_filename.present?
+  #      note thermocycler.save_experiment_file(filename: experiment_filename)
+   #   end
+    #end
+  #end
 
   def associate_measurement(file_name:, plate:)
     file = uploadData(file_name, 1, 4)
     plate.associate(RAW_QPCR_DATA_KEY, file)
   end
 
-  def go_to_thermocycler(thermocycler_name:, plate: nil)
+  def go_to_thermocycler(thermocycler_name:, plates: nil)
     show do
       title 'Go to Thermocycler'
-      note "Take the #{plate.object_type.name} <b>#{plate.id}</b>"\
-           " to Thermocycler #{thermocycler_name}" unless plate.nil?
+      if plates
+        note "Take plates to #{thermocycler_name}"
+        plates.each do |plate|
+          note "#{plate.object_type.name} <b>#{plate.id}</b>"
+        end
+      end
       note "Complete the next few steps at Thermocycler #{thermocycler_name}"
     end
   end
@@ -179,13 +293,13 @@ class Protocol
   def get_available_thermocyclers
     thermocyclers = find_thermocyclers
     available_key = 'available'
-    response = show do
+    response = show {
       title 'Check Available Thermocyclers'
       note 'Please check which thermocyclers are currently available'
       thermocyclers.each { |thermo|
         select [ available_key, 'unavailable' ], var: thermo['name'], label: "Thermocycler #{thermo['name']}", default: 1
-        }
-    end
+      }
+    }
     available_thermo = []
     thermocyclers.map do |thermo|
       next unless response[thermo['name'].to_sym].to_s == available_key || debug
@@ -221,16 +335,20 @@ class Protocol
       end
     end
   end
-
+    
+  # TODO: Assumes that if the operations are in the same job that they will fit onto one thermocycler
+  # Not a totally valid assumtion but for now it will do.
   def pair_ops_and_thermocyclers(thermocyclers, ops)
     paired_ops = []
-    ops.each do |op|
+    ops.group_by(&:plan).each do |_plan, ops|
       thermocyclers.each do |thermo|
-        next unless thermo['model'] == op.temporary[:options][:thermocycler_model]
-
-        op.associate(THERMOCYCLER_KEY, thermo)
+        next unless thermo['model'] == ops.first.temporary[:options][:thermocycler_model]
+        
+        ops.each do |op|
+            op.associate(THERMOCYCLER_KEY, thermo)
+            paired_ops.push(op)
+        end
         thermocyclers.delete(thermo)
-        paired_ops.push(op)
         break
       end
     end
@@ -244,9 +362,9 @@ class Protocol
   # Constructs a name for the experiment file.
   #
   # @return [String]
-  def experiment_filename(plate)
+  def experiment_filename(plan)
     date = DateTime.now.strftime('%Y-%m-%d')
-    "#{date}_Job_#{job.id}_#{plate.id}"
+    "#{date}_Job_#{job.id}_#{plan.id}"
   end
 
   # Gets the currently active `Job`
