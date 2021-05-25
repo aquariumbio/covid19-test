@@ -1,0 +1,74 @@
+{
+  "name": "RehydratePatientSample",
+  "parent_class": "OperationType",
+  "category": "Modified CDC Protocol",
+  "inputs": [
+    {
+      "name": "Specimen",
+      "part": true,
+      "array": true,
+      "routing": "S",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Specimen",
+          "object_type": "8 Well Stripwell"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "12 Well Stripwell"
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "part": false,
+      "array": false,
+      "routing": "M",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Media",
+          "object_type": "5ml Bottle"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Specimen",
+      "part": true,
+      "array": true,
+      "routing": "S",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Specimen",
+          "object_type": "8 Well Stripwell"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "12 Well Stripwell"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

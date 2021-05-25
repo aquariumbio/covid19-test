@@ -1,0 +1,74 @@
+{
+  "name": "Add Master Mix",
+  "parent_class": "OperationType",
+  "category": "Modified CDC Protocol",
+  "inputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "p",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-Well Stripwell Rack"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    },
+    {
+      "name": "Rehydration Buffer",
+      "part": false,
+      "array": false,
+      "routing": "Buffer",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Media",
+          "object_type": "5ml Bottle"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "p",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-Well Stripwell Rack"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

@@ -1,0 +1,51 @@
+{
+  "name": "Aliquot Primer/Probe",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Primer/Probe Mix",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Primer/Probe Mix",
+          "object_type": "Lyophilized Primer/Probe Mix"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Primer/Probe Mix",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Primer/Probe Mix",
+          "object_type": "Primer/Probe Mix Aliquot"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

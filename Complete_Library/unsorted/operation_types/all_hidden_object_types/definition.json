@@ -1,0 +1,109 @@
+{
+  "name": "All hidden object types",
+  "parent_class": "OperationType",
+  "category": "Unsorted",
+  "inputs": [
+    {
+      "name": "New input",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "DNA Sample",
+          "object_type": "Total DNA 96 Well Plate"
+        },
+        {
+          "sample_type": "Master Mix",
+          "object_type": "qPCR Master Mix Stock"
+        },
+        {
+          "sample_type": "Media",
+          "object_type": "800ml Bottle"
+        },
+        {
+          "sample_type": "Media",
+          "object_type": "800ml Bottle"
+        },
+        {
+          "sample_type": "Media",
+          "object_type": "Reagent Aliquot"
+        },
+        {
+          "sample_type": "Primer/Probe Mix",
+          "object_type": "Lyophilized RNA"
+        },
+        {
+          "sample_type": "Primer/Probe Mix",
+          "object_type": "Lyophilized Primer/Probe Mix"
+        },
+        {
+          "sample_type": "RNA Sample",
+          "object_type": "Total RNA 96 Well Plate"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Lyophilized RNA"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Purified RNA/DNA in 1.5 mL tube"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Swab Elute"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Nasopharyngeal Swab"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Purified DNA in 1.5 ml Tube"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Virus Aliquot"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96 Well Sample Rack"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-Well Stripwell Rack"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "Total RNA 96 Well Plate"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "Total DNA 96 Well Plate"
+        },
+        {
+          "sample_type": "DNA Sample",
+          "object_type": "12 Well Stripwell"
+        },
+        {
+          "sample_type": "DNA Sample",
+          "object_type": "8 Well Stripwell"
+        },
+        {
+          "sample_type": "DNA Sample",
+          "object_type": "__Part"
+        }
+      ]
+    }
+  ],
+  "outputs": [],
+  "on_the_fly": false,
+  "user_id": 1
+}

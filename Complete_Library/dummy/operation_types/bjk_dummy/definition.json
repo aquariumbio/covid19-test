@@ -1,0 +1,9 @@
+{
+  "name": "bjk_dummy",
+  "parent_class": "OperationType",
+  "category": "dummy",
+  "inputs": [],
+  "outputs": [],
+  "on_the_fly": null,
+  "user_id": 1
+}

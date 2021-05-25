@@ -1,0 +1,6 @@
+{
+  "name": "New Library Code",
+  "parent_class": "Library",
+  "category": "Diagnostic RT-qPCR",
+  "user_id": 1
+}

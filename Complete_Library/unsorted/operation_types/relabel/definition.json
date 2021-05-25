@@ -1,0 +1,9 @@
+{
+  "name": "relabel",
+  "parent_class": "OperationType",
+  "category": "Unsorted",
+  "inputs": [],
+  "outputs": [],
+  "on_the_fly": null,
+  "user_id": 1
+}

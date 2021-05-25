@@ -1,0 +1,9 @@
+{
+  "name": "Experiment 4",
+  "parent_class": "OperationType",
+  "category": "Unsorted",
+  "inputs": [],
+  "outputs": [],
+  "on_the_fly": false,
+  "user_id": 1
+}

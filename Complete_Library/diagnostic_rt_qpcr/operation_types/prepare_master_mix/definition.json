@@ -1,0 +1,51 @@
+{
+  "name": "Prepare Master Mix",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Primer/Probe Mix",
+      "part": false,
+      "array": true,
+      "routing": "M",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Primer/Probe Mix",
+          "object_type": "Primer/Probe Mix Aliquot"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

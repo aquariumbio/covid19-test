@@ -1,0 +1,59 @@
+{
+  "name": "Run qPCR",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-Well Stripwell Rack"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-Well Stripwell Rack"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 8
+}

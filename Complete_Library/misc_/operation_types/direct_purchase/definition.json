@@ -1,0 +1,9 @@
+{
+  "name": "Direct Purchase",
+  "parent_class": "OperationType",
+  "category": "Misc.",
+  "inputs": [],
+  "outputs": [],
+  "on_the_fly": true,
+  "user_id": 1
+}

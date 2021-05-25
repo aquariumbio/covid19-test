@@ -1,0 +1,19 @@
+{
+  "name": "Total RNA 96 Well Plate",
+  "description": "96 Well plate of total RNA from customer",
+  "min": 0,
+  "max": 1000000,
+  "handler": "collection",
+  "safety": "No safety information",
+  "clean up": "No cleanup information",
+  "data": "No data",
+  "vendor": "No vendor information",
+  "unit": "plate",
+  "cost": 0.01,
+  "release method": "return",
+  "release description": "",
+  "image": null,
+  "prefix": "ColdBoi",
+  "rows": 8,
+  "columns": 12
+}

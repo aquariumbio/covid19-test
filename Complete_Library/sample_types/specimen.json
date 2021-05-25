@@ -1,0 +1,15 @@
+{
+  "name": "Specimen",
+  "description": "A specimen for testing. May be a clinical sample or a control",
+  "field_types": [
+    {
+      "name": "Tracking ID",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": true
+    }
+  ]
+}

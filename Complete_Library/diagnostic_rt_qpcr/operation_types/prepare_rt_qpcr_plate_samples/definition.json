@@ -1,0 +1,66 @@
+{
+  "name": "Prepare RT-qPCR Plate Samples",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Template",
+      "part": false,
+      "array": true,
+      "routing": "T",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Specimen",
+          "object_type": "Purified RNA/DNA in 1.5 mL tube"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    },
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "P",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

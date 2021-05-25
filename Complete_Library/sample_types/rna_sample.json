@@ -1,0 +1,87 @@
+{
+  "name": "RNA Sample",
+  "description": "An individual unique sample of RNA",
+  "field_types": [
+    {
+      "name": "Customer",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Code",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": true
+    },
+    {
+      "name": "Version",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Type",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Label",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Organism",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Conc",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Volume",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    },
+    {
+      "name": "Pool",
+      "part": null,
+      "array": false,
+      "routing": null,
+      "ftype": "string",
+      "choices": null,
+      "required": false
+    }
+  ]
+}

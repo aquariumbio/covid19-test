@@ -1,0 +1,59 @@
+{
+  "name": "Aliquot Positive Template",
+  "parent_class": "OperationType",
+  "category": "Diagnostic RT-qPCR",
+  "inputs": [
+    {
+      "name": "Template",
+      "part": false,
+      "array": false,
+      "routing": "T",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Specimen",
+          "object_type": "Lyophilized RNA"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Template",
+      "part": false,
+      "array": false,
+      "routing": "T",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "Specimen",
+          "object_type": "Purified RNA/DNA in 1.5 mL tube"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "Swab Elute"
+        },
+        {
+          "sample_type": "Specimen",
+          "object_type": "12 Well Stripwell"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 1
+}

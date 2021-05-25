@@ -1,0 +1,40 @@
+{
+  "name": "Setup PCR Plate",
+  "parent_class": "OperationType",
+  "category": "Modified CDC Protocol",
+  "inputs": [
+    {
+      "name": "Options",
+      "part": false,
+      "array": false,
+      "routing": null,
+      "ftype": "json",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "PCR Plate",
+      "part": false,
+      "array": false,
+      "routing": "PP",
+      "ftype": "sample",
+      "choices": null,
+      "required": null,
+      "allowable_field_types": [
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-Well Stripwell Rack"
+        },
+        {
+          "sample_type": "qPCR Reaction",
+          "object_type": "96-well qPCR Plate"
+        }
+      ]
+    }
+  ],
+  "on_the_fly": false,
+  "user_id": 5
+}
